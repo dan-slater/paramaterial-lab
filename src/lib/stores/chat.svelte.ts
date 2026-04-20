@@ -62,6 +62,7 @@ function newId(prefix: string): string {
 // can replace this later by returning the same tool string.
 function pickTool(userText: string): BlockType | null {
 	const q = userText.toLowerCase();
+	if (/summar(y|ise|ize)|overview|describe\s+dataset|dataset\s+info/.test(q)) return 'dataset-summary';
 	if (/ramberg[\s\-]*osgood|power[\s\-]*law/.test(q)) return 'ramberg-osgood';
 	if (/zener[\s\-]*hollomon|activation energy|\bzener\b|\bhollomon\b/.test(q)) return 'zener-hollomon';
 	if (/stress.*strain|plot|curves?$/.test(q) && !/representat|foot|proof|uts|modulus|scatter|ramberg|zener|power/.test(q))

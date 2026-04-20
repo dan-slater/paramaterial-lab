@@ -9,6 +9,7 @@ export type BlockType =
 	| 'scatter'
 	| 'ramberg-osgood'
 	| 'zener-hollomon'
+	| 'dataset-summary'
 	| 'note';
 
 export interface Block {
@@ -173,6 +174,12 @@ export const TOOLS: Array<{ type: BlockType; label: string; description: string;
 		label: 'Zener–Hollomon',
 		description: 'Regress ln σ vs ln Z using strain rate and temperature.',
 		icon: 'Z'
+	},
+	{
+		type: 'dataset-summary',
+		label: 'Dataset summary',
+		description: 'Counts, per-column stats, and strain/stress ranges for the loaded dataset.',
+		icon: 'Σ'
 	},
 	{
 		type: 'note',
