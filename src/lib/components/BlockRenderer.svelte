@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { fly } from 'svelte/transition';
 	import type { Block } from '$lib/stores/blocks.svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
+	import BlockToolbar from './BlockToolbar.svelte';
 	import DatasetPickerBlock from './blocks/DatasetPickerBlock.svelte';
 	import StressStrainBlock from './blocks/StressStrainBlock.svelte';
 	import FootCorrectionBlock from './blocks/FootCorrectionBlock.svelte';
@@ -18,23 +20,20 @@
 
 	let { block, index }: Props = $props();
 
-	const removable = $derived(block.type !== 'dataset-picker');
+	const isDatasetPicker = $derived(block.type === 'dataset-picker');
+	const total = $derived(blocksStore.list.length);
 </script>
 
-<article class="group relative rounded-lg border border-neutral-800 bg-neutral-900 p-5">
-	<div class="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
-		<span class="rounded-md bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-500">#{index + 1}</span>
-		{#if removable}
-			<button
-				type="button"
-				onclick={() => blocksStore.remove(block.id)}
-				title="Remove"
-				class="rounded-md bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400 hover:bg-red-900/70 hover:text-red-200"
-			>
-				Remove
-			</button>
-		{/if}
-	</div>
+<article
+	class="relative rounded-lg border border-neutral-800 bg-neutral-900 p-5 pt-11"
+	in:fly|global={{ y: 8, duration: 180 }}
+>
+	<BlockToolbar
+		id={block.id}
+		{index}
+		{total}
+		variant={isDatasetPicker ? 'index-only' : 'full'}
+	/>
 	{#if block.type === 'dataset-picker'}
 		<DatasetPickerBlock />
 	{:else if block.type === 'stress-strain'}

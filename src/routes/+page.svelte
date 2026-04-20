@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import BlockRenderer from '$lib/components/BlockRenderer.svelte';
@@ -7,6 +8,70 @@
 	import ExportMenu from '$lib/components/ExportMenu.svelte';
 
 	let chatOpen = $state(false);
+
+	// Show an empty-state hint once a dataset is loaded but the user hasn't
+	// added any tool blocks yet.
+	const hasDataset = $derived(!!datasetStore.current);
+	const onlyDatasetPicker = $derived(
+		blocksStore.list.length === 1 && blocksStore.list[0].type === 'dataset-picker'
+	);
+	const showEmptyHint = $derived(hasDataset && onlyDatasetPicker);
+
+	onMount(() => {
+		const mq = window.matchMedia('(min-width: 1024px)');
+
+		function handleKey(e: KeyboardEvent) {
+			// Desktop-only shortcuts
+			if (!mq.matches) return;
+
+			const target = e.target as HTMLElement | null;
+			const tag = target?.tagName;
+			const isEditable =
+				tag === 'INPUT' ||
+				tag === 'TEXTAREA' ||
+				tag === 'SELECT' ||
+				target?.isContentEditable === true;
+
+			// Esc: blur any editable element. Don't intercept otherwise.
+			if (e.key === 'Escape') {
+				if (isEditable && target && 'blur' in target) {
+					(target as HTMLElement).blur();
+					e.preventDefault();
+				}
+				return;
+			}
+
+			const mod = e.metaKey || e.ctrlKey;
+			if (!mod) return;
+
+			// Cmd/Ctrl-K: focus tool palette (scroll + focus first tool button)
+			if (e.key === 'k' || e.key === 'K') {
+				e.preventDefault();
+				const palette = document.getElementById('tool-palette');
+				const firstBtn = document.getElementById('tool-palette-first');
+				palette?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+				if (firstBtn) (firstBtn as HTMLButtonElement).focus();
+				return;
+			}
+
+			// Cmd/Ctrl-/: focus chat textarea
+			if (e.key === '/') {
+				e.preventDefault();
+				chatOpen = true;
+				// Allow the aside to mount/become visible before focusing.
+				requestAnimationFrame(() => {
+					const ta = document.querySelector<HTMLTextAreaElement>(
+						'textarea[placeholder*="analysis"]'
+					);
+					ta?.focus();
+				});
+				return;
+			}
+		}
+
+		window.addEventListener('keydown', handleKey);
+		return () => window.removeEventListener('keydown', handleKey);
+	});
 </script>
 
 <header
@@ -58,6 +123,18 @@
 						<BlockRenderer {block} index={i} />
 					</div>
 				{/each}
+				{#if showEmptyHint}
+					<div
+						class="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/40 p-5 text-center"
+					>
+						<p class="text-sm text-neutral-400">
+							Pick a tool below, or ask the assistant <span aria-hidden="true">→</span>
+						</p>
+						<p class="mt-1 text-xs text-neutral-600">
+							Try "plot stress strain" or tap a tool in the palette.
+						</p>
+					</div>
+				{/if}
 				<p class="pt-2 text-center text-xs text-neutral-600">
 					End of report · add a block below or ask the assistant
 				</p>
