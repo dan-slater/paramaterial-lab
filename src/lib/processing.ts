@@ -215,6 +215,115 @@ export function computeRepresentative(
 	return out;
 }
 
+/** Linear interpolation of stress at a target strain along the curve.
+ *  Returns null if targetStrain is outside the sorted range or the curve is too short. */
+export function flowStressAt(c: Curve, targetStrain: number): number | null {
+	const n = c.strain.length;
+	if (n < 2) return null;
+	// Sort by strain ascending to tolerate noisy input
+	const idx = Array.from({ length: n }, (_, i) => i).sort((a, b) => c.strain[a] - c.strain[b]);
+	const sx = idx.map((i) => c.strain[i]);
+	const sy = idx.map((i) => c.stress[i]);
+	if (targetStrain < sx[0] || targetStrain > sx[sx.length - 1]) return null;
+	// Binary-search-ish linear scan
+	for (let i = 0; i < sx.length - 1; i++) {
+		if (sx[i] <= targetStrain && targetStrain <= sx[i + 1]) {
+			const x0 = sx[i], x1 = sx[i + 1];
+			if (x1 === x0) return sy[i];
+			const t = (targetStrain - x0) / (x1 - x0);
+			return sy[i] + t * (sy[i + 1] - sy[i]);
+		}
+	}
+	return null;
+}
+
+export interface RambergOsgoodFit {
+	C: number;
+	n: number;
+	r2: number;
+}
+
+/** Ramberg–Osgood power-law fit in the plastic region.
+ *  Finds proof-stress start via findUplLpl + findProofStress, takes points from PS strain
+ *  to UTS, runs OLS on (log ε, log σ), returns σ = C · ε^n and R². */
+export function fitRambergOsgood(c: Curve, proofStrain: number = 0.002): RambergOsgoodFit {
+	const { strain, stress } = c;
+	const n = strain.length;
+	let startStrain: number;
+	try {
+		const foot = findUplLpl(c);
+		const ps = findProofStress(c, foot.E, proofStrain);
+		startStrain = Number.isFinite(ps.strainAtPS) ? ps.strainAtPS : proofStrain;
+	} catch {
+		startStrain = proofStrain;
+	}
+	const uts = findUTS(c);
+	const endIdx = uts.idx;
+
+	// Collect (log ε, log σ) with ε > 0 and σ > 0 between startStrain and endIdx (inclusive)
+	const lx: number[] = [];
+	const ly: number[] = [];
+	for (let i = 0; i <= endIdx && i < n; i++) {
+		const eps = strain[i];
+		const sig = stress[i];
+		if (eps <= startStrain) continue;
+		if (!Number.isFinite(eps) || !Number.isFinite(sig) || eps <= 0 || sig <= 0) continue;
+		lx.push(Math.log(eps));
+		ly.push(Math.log(sig));
+	}
+	if (lx.length < 3) return { C: NaN, n: NaN, r2: 0 };
+
+	const fit = linfit(lx, ly, 0, lx.length);
+	const nExp = fit.slope;
+	const C = Math.exp(fit.intercept);
+	return { C, n: nExp, r2: fit.r2 };
+}
+
+export interface ZhRegression {
+	slope: number; // a in ln σ = a · ln Z + b
+	intercept: number; // b
+	r2: number;
+	points: Array<{ lnZ: number; lnSigma: number; testId: string; Z: number; sigma: number }>;
+}
+
+/** Zener–Hollomon regression. Z = ε̇ · exp(Q / (R · T_K)); fits ln σ = a · ln Z + b by OLS.
+ *  Flow stress pulled per test via linear interp at opts.flowStrain (default 0.3).
+ *  Returns null if no test has both `rate` and `temperature` + reachable flowStrain. */
+export function computeZH(
+	tests: Array<{ test_id: string; meta: Record<string, unknown>; strain: number[]; stress: number[] }>,
+	opts: { Q_kJmol?: number; flowStrain?: number }
+): ZhRegression | null {
+	const Q = (opts.Q_kJmol ?? 155) * 1000; // J/mol
+	const R = 8.314;
+	const flowStrain = opts.flowStrain ?? 0.3;
+
+	const pts: ZhRegression['points'] = [];
+	for (const t of tests) {
+		const rate = Number(t.meta.rate ?? t.meta.strain_rate);
+		const tempC = Number(t.meta.temperature ?? t.meta.temp);
+		if (!Number.isFinite(rate) || !Number.isFinite(tempC) || rate <= 0) continue;
+		const TK = tempC + 273.15;
+		if (TK <= 0) continue;
+		const sigma = flowStressAt({ strain: t.strain, stress: t.stress }, flowStrain);
+		if (sigma === null || !Number.isFinite(sigma) || sigma <= 0) continue;
+		const Z = rate * Math.exp(Q / (R * TK));
+		if (!Number.isFinite(Z) || Z <= 0) continue;
+		pts.push({
+			lnZ: Math.log(Z),
+			lnSigma: Math.log(sigma),
+			testId: t.test_id,
+			Z,
+			sigma
+		});
+	}
+	if (pts.length < 2) return null;
+
+	const xs = pts.map((p) => p.lnZ);
+	const ys = pts.map((p) => p.lnSigma);
+	const fit = linfit(xs, ys, 0, xs.length);
+	return { slope: fit.slope, intercept: fit.intercept, r2: fit.r2, points: pts };
+}
+
 /* Example usage (not executed):
  *
  * import raw from '../../static/data/basic-usage.json';

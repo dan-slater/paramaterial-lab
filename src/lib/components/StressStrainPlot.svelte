@@ -7,9 +7,19 @@
 		tests: Test[];
 		colorBy?: string;
 		height?: number;
+		showOffset?: boolean;
+		offsetStrain?: number;
+		offsetE?: number;
 	}
 
-	let { tests, colorBy = 'temperature', height = 480 }: Props = $props();
+	let {
+		tests,
+		colorBy = 'temperature',
+		height = 480,
+		showOffset = false,
+		offsetStrain = 0.002,
+		offsetE
+	}: Props = $props();
 
 	let container: HTMLDivElement;
 	let plot: uPlot | null = null;
@@ -49,6 +59,16 @@
 				spanGaps: false
 			}))
 		];
+		if (showOffset) {
+			series.push({
+				label: `${offsetStrain * 100}% offset`,
+				stroke: '#f0f921',
+				width: 1.8,
+				dash: [6, 4],
+				points: { show: false },
+				spanGaps: false
+			});
+		}
 		// Compute explicit y range from data (avoid uPlot's auto-scale if it's failing)
 		let yMin = Infinity, yMax = -Infinity;
 		for (const t of tests) {
@@ -145,6 +165,23 @@
 			}
 			data.push(y);
 		}
+		if (showOffset && typeof offsetE === 'number' && Number.isFinite(offsetE) && offsetE > 0) {
+			// y = E · (x − offsetStrain), clipped to the positive stress region of the plot
+			// Compute the per-test max stress to pick a reasonable clip
+			let yMaxAll = -Infinity;
+			for (const t of tests) {
+				for (const v of t.stress) {
+					if (Number.isFinite(v) && v > yMaxAll) yMaxAll = v;
+				}
+			}
+			const offsetY = new Array<number>(N);
+			for (let i = 0; i < N; i++) {
+				const ye = offsetE * (x[i] - offsetStrain);
+				// Clip below 0 and above max stress to NaN so the line doesn't distort the plot
+				offsetY[i] = ye < 0 || ye > yMaxAll * 1.05 ? NaN : ye;
+			}
+			data.push(offsetY);
+		}
 		return data;
 	}
 
@@ -172,6 +209,9 @@
 		// re-render when props change
 		tests;
 		colorBy;
+		showOffset;
+		offsetStrain;
+		offsetE;
 		render();
 	});
 </script>

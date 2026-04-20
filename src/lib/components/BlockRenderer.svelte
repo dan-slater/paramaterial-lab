@@ -7,6 +7,8 @@
 	import PropertyTableBlock from './blocks/PropertyTableBlock.svelte';
 	import RepresentativeCurvesBlock from './blocks/RepresentativeCurvesBlock.svelte';
 	import ScatterBlock from './blocks/ScatterBlock.svelte';
+	import RambergOsgoodBlock from './blocks/RambergOsgoodBlock.svelte';
+	import ZenerHollomonBlock from './blocks/ZenerHollomonBlock.svelte';
 	import NoteBlock from './blocks/NoteBlock.svelte';
 
 	interface Props {
@@ -45,6 +47,10 @@
 		<RepresentativeCurvesBlock id={block.id} config={block.config} />
 	{:else if block.type === 'scatter'}
 		<ScatterBlock id={block.id} config={block.config} />
+	{:else if block.type === 'ramberg-osgood'}
+		<RambergOsgoodBlock id={block.id} config={block.config} />
+	{:else if block.type === 'zener-hollomon'}
+		<ZenerHollomonBlock id={block.id} config={block.config} />
 	{:else if block.type === 'note'}
 		<NoteBlock id={block.id} config={block.config} />
 	{/if}
