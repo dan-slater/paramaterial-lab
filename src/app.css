@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+@import 'uplot/dist/uPlot.min.css';
+
+@theme {
+	--color-plasma-50: #fdf4ff;
+	--color-plasma-100: #fae8ff;
+	--color-plasma-200: #f5d0fe;
+	--color-plasma-300: #f0abfc;
+	--color-plasma-400: #e879f9;
+	--color-plasma-500: #d946ef;
+	--color-plasma-600: #c026d3;
+	--color-plasma-700: #a21caf;
+	--color-plasma-800: #86198f;
+	--color-plasma-900: #701a75;
+	--color-plasma-950: #4a044e;
+
+	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+	background: #0b0b10;
+	color: #e6e6ec;
+	font-family: var(--font-sans);
+}
+
+body {
+	min-height: 100vh;
+}
+
+.uplot {
+	font-family: var(--font-sans) !important;
+}
+
+/* dark theme overrides for uPlot */
+.u-legend {
+	color: #cfcfd6;
+}
+.u-axis {
+	color: #9ca3af;
+}

@@ -1,0 +1,7 @@
+node_modules
+.svelte-kit
+build
+.env
+.DS_Store
+# generated data fixtures (regenerate via scripts/build_data.py)
+static/data/*.json
