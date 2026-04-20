@@ -14,10 +14,11 @@
 	let container: HTMLDivElement;
 	let plot: uPlot | null = null;
 
-	// plasma colormap (approximated as 11 stops)
-	const plasma = [
-		'#0d0887', '#41049d', '#6a00a8', '#8f0da4', '#b12a90',
-		'#cc4778', '#e16462', '#f2844b', '#fca636', '#fcce25', '#f0f921'
+	// Viridis-inspired colormap — avoids near-black endpoints that disappear
+	// against the dark background.
+	const palette = [
+		'#6a00a8', '#8f0da4', '#b12a90', '#cc4778',
+		'#e16462', '#f2844b', '#fca636', '#fcce25', '#f0f921'
 	];
 
 	function colorFor(value: unknown, all: unknown[]): string {
@@ -26,13 +27,13 @@
 			const min = Math.min(...nums);
 			const max = Math.max(...nums);
 			const t = max === min ? 0.5 : (Number(value) - min) / (max - min);
-			const idx = Math.min(plasma.length - 1, Math.max(0, Math.floor(t * (plasma.length - 1))));
-			return plasma[idx];
+			const idx = Math.min(palette.length - 1, Math.max(0, Math.floor(t * (palette.length - 1))));
+			return palette[idx];
 		}
-		// categorical fallback — hash to plasma index
+		// categorical fallback — hash to palette index
 		const unique = Array.from(new Set(all.map(String)));
 		const idx = unique.indexOf(String(value));
-		return plasma[idx % plasma.length];
+		return palette[idx % palette.length];
 	}
 
 	function buildOpts(tests: Test[], width: number): uPlot.Options {
@@ -42,17 +43,30 @@
 			...tests.map((t) => ({
 				label: t.test_id,
 				stroke: colorFor(t.meta[colorBy], allColorVals),
-				width: 1,
-				points: { show: false }
+				width: 1.2,
+				alpha: 0.75,
+				points: { show: false },
+				spanGaps: false
 			}))
 		];
+		// Compute explicit y range from data (avoid uPlot's auto-scale if it's failing)
+		let yMin = Infinity, yMax = -Infinity;
+		for (const t of tests) {
+			for (const v of t.stress) {
+				if (Number.isFinite(v)) {
+					if (v < yMin) yMin = v;
+					if (v > yMax) yMax = v;
+				}
+			}
+		}
+		const yPad = (yMax - yMin) * 0.05;
 		return {
 			width,
 			height,
 			series,
 			scales: {
 				x: { time: false },
-				y: {}
+				y: { range: [yMin - yPad, yMax + yPad] }
 			},
 			axes: [
 				{
@@ -77,30 +91,56 @@
 	}
 
 	function buildData(tests: Test[]): uPlot.AlignedData {
-		// Build a unified x-axis by collecting all unique strain values, then interpolate each test.
-		// For performance we instead use a padded approach: take the longest strain series as x,
-		// and pad shorter tests with NaN. uPlot tolerates NaN gaps.
-		const maxLen = Math.max(...tests.map((t) => t.strain.length));
-		const xRef = tests.reduce((a, b) => (b.strain.length > a.strain.length ? b : a)).strain;
-		const x = xRef.slice(0, maxLen);
-		const data: uPlot.AlignedData = [x as unknown as number[]];
+		// Raw strain data can be non-monotonic (elastic-region noise around zero).
+		// uPlot requires strictly increasing x, so build a synthetic linspace grid
+		// over the union range, then interpolate each test's (strain → stress) onto it.
+		let minX = Infinity;
+		let maxX = -Infinity;
 		for (const t of tests) {
-			const y = new Array<number>(x.length);
-			// Simple linear interpolation onto the reference x grid
+			for (let i = 0; i < t.strain.length; i++) {
+				const v = t.strain[i];
+				if (v < minX) minX = v;
+				if (v > maxX) maxX = v;
+			}
+		}
+		const N = 500;
+		const x = new Array<number>(N);
+		for (let i = 0; i < N; i++) {
+			x[i] = minX + (i * (maxX - minX)) / (N - 1);
+		}
+
+		const data: uPlot.AlignedData = [x];
+		for (const t of tests) {
+			const sx = t.strain;
+			const sy = t.stress;
+			// First sort (sx, sy) by x ascending to tolerate noisy test data.
+			// The paired sort is cheap: build indices array, sort, apply.
+			const idx = Array.from(sx.keys()).sort((a, b) => sx[a] - sx[b]);
+			const sxs = new Array<number>(sx.length);
+			const sys = new Array<number>(sx.length);
+			for (let i = 0; i < idx.length; i++) {
+				sxs[i] = sx[idx[i]];
+				sys[i] = sy[idx[i]];
+			}
+
+			const y = new Array<number>(N);
 			let j = 0;
-			for (let i = 0; i < x.length; i++) {
+			for (let i = 0; i < N; i++) {
 				const xi = x[i];
-				while (j < t.strain.length - 1 && t.strain[j + 1] < xi) j++;
-				if (xi < t.strain[0] || xi > t.strain[t.strain.length - 1]) {
+				if (xi < sxs[0] || xi > sxs[sxs.length - 1]) {
 					y[i] = NaN;
-				} else if (t.strain[j] === xi) {
-					y[i] = t.stress[j];
+					continue;
+				}
+				while (j < sxs.length - 1 && sxs[j + 1] < xi) j++;
+				if (sxs[j] === xi || j === sxs.length - 1) {
+					y[i] = sys[j];
 				} else {
-					const x0 = t.strain[j];
-					const x1 = t.strain[j + 1];
-					const y0 = t.stress[j];
-					const y1 = t.stress[j + 1];
-					y[i] = y0 + ((xi - x0) / (x1 - x0)) * (y1 - y0);
+					const x0 = sxs[j];
+					const x1 = sxs[j + 1];
+					const y0 = sys[j];
+					const y1 = sys[j + 1];
+					const denom = x1 - x0;
+					y[i] = denom === 0 ? y0 : y0 + ((xi - x0) / denom) * (y1 - y0);
 				}
 			}
 			data.push(y);
