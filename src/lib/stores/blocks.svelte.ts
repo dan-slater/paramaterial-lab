@@ -49,6 +49,42 @@ export const blocksStore = {
 		const i = state.blocks.findIndex((b) => b.id === id);
 		if (i >= 0) state.blocks.splice(i, 1);
 	},
+	move(id: string, direction: 'up' | 'down') {
+		const i = state.blocks.findIndex((b) => b.id === id);
+		if (i < 0) return;
+		// Don't move the dataset-picker, and don't move anything into its slot.
+		// Dataset-picker is expected at index 0; restrict swap range to [1..len-1].
+		const isDatasetPicker = state.blocks[i].type === 'dataset-picker';
+		if (isDatasetPicker) return;
+		const target = direction === 'up' ? i - 1 : i + 1;
+		if (target < 0 || target >= state.blocks.length) return;
+		if (state.blocks[target].type === 'dataset-picker') return;
+		const arr = state.blocks;
+		[arr[i], arr[target]] = [arr[target], arr[i]];
+	},
+	duplicate(id: string): Block | null {
+		const i = state.blocks.findIndex((b) => b.id === id);
+		if (i < 0) return null;
+		const src = state.blocks[i];
+		if (src.type === 'dataset-picker') return null;
+		// Clone via JSON round-trip to strip any non-serializable values
+		// (functions, DOM refs) that block-specific components may have stashed.
+		let configCopy: Record<string, unknown> = {};
+		try {
+			configCopy = JSON.parse(JSON.stringify(src.config ?? {}));
+		} catch {
+			configCopy = { ...(src.config ?? {}) };
+		}
+		const copy: Block = {
+			id: newId(src.type),
+			type: src.type,
+			title: src.title,
+			config: configCopy,
+			createdAt: Date.now()
+		};
+		state.blocks.splice(i + 1, 0, copy);
+		return copy;
+	},
 	clear() {
 		state.blocks = initialBlocks.slice();
 	}

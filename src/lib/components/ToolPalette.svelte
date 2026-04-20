@@ -11,17 +11,19 @@
 </script>
 
 <div
+	id="tool-palette"
 	class="pointer-events-auto flex max-w-full gap-2 overflow-x-auto rounded-xl border border-neutral-800 bg-neutral-900/90 p-2 shadow-xl backdrop-blur"
 >
 	<span class="shrink-0 self-center pl-2 pr-1 text-[10px] uppercase tracking-wider text-neutral-500"
 		>Add block</span
 	>
-	{#each TOOLS as t}
+	{#each TOOLS as t, i}
 		<button
 			type="button"
+			id={i === 0 ? 'tool-palette-first' : undefined}
 			onclick={() => addAndScroll(t.type)}
 			title={t.description}
-			class="group flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-700 bg-neutral-800/70 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-plasma-500 hover:bg-plasma-600 hover:text-white"
+			class="group flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-700 bg-neutral-800/70 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-plasma-500 hover:bg-plasma-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-plasma-500"
 		>
 			<span class="font-mono text-sm text-plasma-400 group-hover:text-white">{t.icon}</span>
 			<span>{t.label}</span>
