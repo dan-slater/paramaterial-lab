@@ -4,6 +4,7 @@
 	import BlockRenderer from '$lib/components/BlockRenderer.svelte';
 	import ToolPalette from '$lib/components/ToolPalette.svelte';
 	import ChatPane from '$lib/components/ChatPane.svelte';
+	import ExportMenu from '$lib/components/ExportMenu.svelte';
 
 	let chatOpen = $state(false);
 </script>
@@ -23,6 +24,7 @@
 		{:else}
 			<span class="hidden sm:inline">No dataset loaded</span>
 		{/if}
+		<ExportMenu />
 		<button
 			type="button"
 			onclick={() => (chatOpen = !chatOpen)}
@@ -33,6 +35,19 @@
 		</button>
 	</div>
 </header>
+
+{#if datasetStore.needsReupload}
+	<div class="flex items-center justify-between gap-3 border-b border-amber-900/50 bg-amber-950/40 px-4 py-2 text-xs text-amber-200">
+		<span>Your previous dataset was an uploaded CSV — raw data isn't saved across reloads. Re-upload it in the first block to continue.</span>
+		<button
+			type="button"
+			onclick={() => datasetStore.dismissReuploadNotice()}
+			class="rounded border border-amber-800/60 px-2 py-0.5 text-[11px] hover:bg-amber-900/40"
+		>
+			Dismiss
+		</button>
+	</div>
+{/if}
 
 <div class="flex min-h-0 flex-1 overflow-hidden">
 	<main class="relative flex min-h-0 flex-1 flex-col">

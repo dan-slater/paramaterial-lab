@@ -1,3 +1,5 @@
+import { loadJSON, saveJSONDebounced, STORAGE_KEYS } from './persistence';
+
 export type BlockType =
 	| 'dataset-picker'
 	| 'stress-strain'
@@ -5,6 +7,8 @@ export type BlockType =
 	| 'property-table'
 	| 'representative-curves'
 	| 'scatter'
+	| 'ramberg-osgood'
+	| 'zener-hollomon'
 	| 'note';
 
 export interface Block {
@@ -13,6 +17,11 @@ export interface Block {
 	title?: string;
 	config: Record<string, unknown>;
 	createdAt: number;
+}
+
+interface PersistedShape {
+	v: 1;
+	blocks: Block[];
 }
 
 const initialBlocks: Block[] = [
@@ -24,7 +33,36 @@ const initialBlocks: Block[] = [
 	}
 ];
 
-const state = $state<{ blocks: Block[] }>({ blocks: initialBlocks });
+function hydrate(): Block[] {
+	const saved = loadJSON<PersistedShape>(STORAGE_KEYS.blocks);
+	if (saved && saved.v === 1 && Array.isArray(saved.blocks) && saved.blocks.length > 0) {
+		// Ensure a dataset-picker is present as the first block.
+		const hasPicker = saved.blocks.some((b) => b.type === 'dataset-picker');
+		return hasPicker ? saved.blocks : [initialBlocks[0], ...saved.blocks];
+	}
+	return initialBlocks.slice();
+}
+
+const state = $state<{ blocks: Block[] }>({ blocks: hydrate() });
+
+// Autosave on any change. $effect.root lives for the lifetime of the module.
+if (typeof window !== 'undefined') {
+	$effect.root(() => {
+		$effect(() => {
+			// Read every field we care about so Svelte tracks deep mutations.
+			const snapshot = state.blocks.map((b) => ({
+				id: b.id,
+				type: b.type,
+				title: b.title,
+				config: { ...b.config },
+				createdAt: b.createdAt
+			}));
+			const payload: PersistedShape = { v: 1, blocks: snapshot };
+			saveJSONDebounced(STORAGE_KEYS.blocks, payload, 50);
+		});
+		return () => {};
+	});
+}
 
 let counter = 0;
 function newId(type: BlockType): string {
@@ -51,6 +89,9 @@ export const blocksStore = {
 	},
 	clear() {
 		state.blocks = initialBlocks.slice();
+	},
+	replaceAll(next: Block[]) {
+		state.blocks = next.slice();
 	}
 };
 
@@ -84,6 +125,18 @@ export const TOOLS: Array<{ type: BlockType; label: string; description: string;
 		label: 'Parameter scatter',
 		description: 'Extracted parameter vs condition (temperature, lot, …).',
 		icon: '◦'
+	},
+	{
+		type: 'ramberg-osgood',
+		label: 'Ramberg–Osgood',
+		description: 'Power-law fit σ = C·ε^n in the plastic region per test.',
+		icon: 'σ'
+	},
+	{
+		type: 'zener-hollomon',
+		label: 'Zener–Hollomon',
+		description: 'Regress ln σ vs ln Z using strain rate and temperature.',
+		icon: 'Z'
 	},
 	{
 		type: 'note',
