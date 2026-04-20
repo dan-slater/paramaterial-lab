@@ -6,6 +6,8 @@
 	import ToolPalette from '$lib/components/ToolPalette.svelte';
 	import ChatPane from '$lib/components/ChatPane.svelte';
 	import ExportMenu from '$lib/components/ExportMenu.svelte';
+	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
+	import type { Block } from '$lib/stores/blocks.svelte';
 
 	let chatOpen = $state(false);
 
@@ -17,7 +19,55 @@
 	);
 	const showEmptyHint = $derived(hasDataset && onlyDatasetPicker);
 
+	// If the URL carries ?state=..., decode it into the blocks store once on mount
+	// and rehydrate the referenced dataset, then strip the query param so the
+	// shareable-link behavior is a one-shot seed rather than a sticky mode.
+	function consumeShareableState() {
+		try {
+			const params = new URLSearchParams(window.location.search);
+			const encoded = params.get('state');
+			if (!encoded) return;
+			let json: string;
+			try {
+				json = decodeURIComponent(atob(encoded));
+			} catch {
+				return;
+			}
+			const data = JSON.parse(json) as {
+				blocks?: Array<Partial<Block>>;
+				datasetId?: string | null;
+			};
+			if (Array.isArray(data.blocks) && data.blocks.length) {
+				const hydrated: Block[] = data.blocks.map((b, i) => ({
+					id: b.id ?? `shared-${i}-${Date.now().toString(36)}`,
+					type: (b.type as Block['type']) ?? 'note',
+					title: b.title,
+					config: (b.config as Record<string, unknown>) ?? {},
+					createdAt: Date.now()
+				}));
+				blocksStore.replaceAll(hydrated);
+			}
+			if (typeof data.datasetId === 'string' && data.datasetId.length) {
+				void datasetStore.load(data.datasetId);
+			}
+		} catch {
+			// Ignore malformed share links — fall through to the normal load.
+		} finally {
+			// Strip the query param whether or not decode succeeded; it's single-use.
+			try {
+				const u = new URL(window.location.href);
+				if (u.searchParams.has('state')) {
+					u.searchParams.delete('state');
+					history.replaceState(null, '', u.pathname + (u.search ? u.search : '') + u.hash);
+				}
+			} catch {
+				/* noop */
+			}
+		}
+	}
+
 	onMount(() => {
+		consumeShareableState();
 		const mq = window.matchMedia('(min-width: 1024px)');
 
 		function handleKey(e: KeyboardEvent) {
@@ -89,6 +139,7 @@
 		{:else}
 			<span class="hidden sm:inline">No dataset loaded</span>
 		{/if}
+		<TemplatePicker />
 		<ExportMenu />
 		<button
 			type="button"

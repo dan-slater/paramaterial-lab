@@ -2,9 +2,29 @@
 	import { blocksStore, type Block } from '$lib/stores/blocks.svelte';
 	import { chatStore, type ChatMessage } from '$lib/stores/chat.svelte';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import {
+		findUplLpl,
+		findE,
+		findUTS,
+		findProofStress,
+		fitRambergOsgood,
+		computeZH,
+		computeRepresentative
+	} from '$lib/processing';
 
 	let open = $state(false);
 	let fileInput: HTMLInputElement;
+	let toast = $state<string | null>(null);
+	let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function showToast(msg: string, ms = 1800) {
+		toast = msg;
+		if (toastTimer) clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => {
+			toast = null;
+			toastTimer = null;
+		}, ms);
+	}
 
 	function timestamp(): string {
 		const d = new Date();
@@ -71,12 +91,8 @@
 	}
 
 	function snapshotArticle(article: HTMLElement): string {
-		// Strip hover-only controls, then replace canvases with <img> data-URLs and
-		// serialize the rest. Tables are kept as-is so they render without JS.
 		const clone = article.cloneNode(true) as HTMLElement;
-		// Remove the floating #N / Remove overlay (not useful in a static export).
 		clone.querySelectorAll('.opacity-0').forEach((el) => el.remove());
-		// Replace clone canvases with images sourced from the *live* canvas.
 		const liveCanvases = article.querySelectorAll('canvas');
 		const cloneCanvases = clone.querySelectorAll('canvas');
 		cloneCanvases.forEach((cv, i) => {
@@ -93,7 +109,6 @@
 				/* tainted canvas; skip */
 			}
 		});
-		// Replace textareas with their rendered text (note blocks).
 		clone.querySelectorAll('textarea').forEach((ta, i) => {
 			const liveTa = article.querySelectorAll('textarea')[i] as HTMLTextAreaElement | undefined;
 			const val = liveTa?.value ?? (ta as HTMLTextAreaElement).value ?? '';
@@ -102,7 +117,6 @@
 			p.style.whiteSpace = 'pre-wrap';
 			ta.replaceWith(p);
 		});
-		// Remove buttons/selects since the static doc can't act on them.
 		clone.querySelectorAll('button, select, input').forEach((el) => el.remove());
 		return clone.outerHTML;
 	}
@@ -151,6 +165,316 @@ ${body}
 		open = false;
 	}
 
+	// ---------- Markdown export ----------
+
+	function mdEscape(v: unknown): string {
+		const s = String(v ?? '');
+		return s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+	}
+
+	function titleForBlock(b: Block, idx: number): string {
+		const fallback: Record<string, string> = {
+			'dataset-picker': 'Dataset',
+			'stress-strain': 'Stress–strain',
+			'foot-correction': 'Foot correction',
+			'property-table': 'Properties table',
+			'representative-curves': 'Representative curves',
+			scatter: 'Parameter scatter',
+			'ramberg-osgood': 'Ramberg–Osgood',
+			'zener-hollomon': 'Zener–Hollomon',
+			note: 'Note',
+			'dataset-summary': 'Dataset summary'
+		};
+		return b.title?.trim() || `${idx}. ${fallback[b.type] ?? b.type}`;
+	}
+
+	function renderStressStrainMd(b: Block): string {
+		const tests = datasetStore.current?.tests ?? [];
+		const colorBy = (b.config?.colorBy as string) ?? '—';
+		return `_(${tests.length} tests, color by: ${colorBy})_`;
+	}
+
+	function renderFootCorrectionMd(b: Block): string {
+		const tests = datasetStore.current?.tests ?? [];
+		if (!tests.length) return '_No dataset loaded._';
+		const requested = (b.config?.testId as string) ?? '';
+		const test = tests.find((t) => t.test_id === requested) ?? tests[0];
+		try {
+			const foot = findUplLpl({ strain: test.strain, stress: test.stress });
+			return `Test **${test.test_id}**: E = **${foot.E.toFixed(0)} MPa**, UPL = ${foot.uplIdx}, LPL = ${foot.lplIdx}`;
+		} catch {
+			return `Test **${test.test_id}**: fit failed.`;
+		}
+	}
+
+	function renderPropertyTableMd(): string {
+		const tests = datasetStore.current?.tests ?? [];
+		if (!tests.length) return '_No dataset loaded._';
+		interface Row {
+			test_id: string;
+			UTS: string;
+			E: string;
+			PS: string;
+		}
+		const rows: Row[] = [];
+		for (const t of tests) {
+			try {
+				const foot = findUplLpl({ strain: t.strain, stress: t.stress });
+				const uts = findUTS({ strain: t.strain, stress: t.stress });
+				const ps = findProofStress({ strain: t.strain, stress: t.stress }, foot.E);
+				rows.push({
+					test_id: t.test_id,
+					UTS: Number.isFinite(uts.UTS) ? uts.UTS.toFixed(1) : '—',
+					E: Number.isFinite(foot.E) ? foot.E.toFixed(0) : '—',
+					PS: Number.isFinite(ps.proofStress) ? ps.proofStress.toFixed(1) : '—'
+				});
+			} catch {
+				rows.push({ test_id: t.test_id, UTS: '—', E: '—', PS: '—' });
+			}
+		}
+		const cap = 20;
+		const shown = rows.slice(0, cap);
+		const head = '| test_id | UTS (MPa) | E (MPa) | PS (MPa) |';
+		const sep = '| --- | ---: | ---: | ---: |';
+		const body = shown
+			.map((r) => `| ${mdEscape(r.test_id)} | ${r.UTS} | ${r.E} | ${r.PS} |`)
+			.join('\n');
+		let out = [head, sep, body].join('\n');
+		if (rows.length > cap) {
+			out += `\n\n… and ${rows.length - cap} more.`;
+		}
+		return out;
+	}
+
+	function renderRepresentativeCurvesMd(b: Block): string {
+		const tests = datasetStore.current?.tests ?? [];
+		const groupBy = (b.config?.groupBy as string) ?? '';
+		if (!tests.length || !groupBy) return '_Missing dataset or group key._';
+		try {
+			const reps = computeRepresentative(tests, [groupBy], 50);
+			return `**${reps.length}** groups grouped by \`${groupBy}\`.`;
+		} catch {
+			return '_Could not compute representative curves._';
+		}
+	}
+
+	function renderScatterMd(b: Block): string {
+		const tests = datasetStore.current?.tests ?? [];
+		const xKey = (b.config?.xKey as string) ?? '—';
+		const yProp = (b.config?.yProperty as string) ?? 'UTS';
+		let n = 0;
+		for (const t of tests) {
+			const xv = Number(t.meta[xKey]);
+			if (!Number.isFinite(xv)) continue;
+			try {
+				if (yProp === 'UTS') {
+					findUTS({ strain: t.strain, stress: t.stress });
+				} else if (yProp === 'E') {
+					findUplLpl({ strain: t.strain, stress: t.stress });
+				} else {
+					const foot = findUplLpl({ strain: t.strain, stress: t.stress });
+					findProofStress({ strain: t.strain, stress: t.stress }, foot.E);
+				}
+				n++;
+			} catch {
+				/* skip */
+			}
+		}
+		return `**${yProp}** vs **${xKey}**, ${n} points.`;
+	}
+
+	function renderRambergOsgoodMd(): string {
+		const tests = datasetStore.current?.tests ?? [];
+		if (!tests.length) return '_No dataset loaded._';
+		let n = 0;
+		for (const t of tests) {
+			try {
+				const f = fitRambergOsgood({ strain: t.strain, stress: t.stress });
+				if (Number.isFinite(f.C) && Number.isFinite(f.n)) n++;
+			} catch {
+				/* skip */
+			}
+		}
+		return `**${n}** tests with fitted C, n.`;
+	}
+
+	function renderZenerHollomonMd(b: Block): string {
+		const tests = datasetStore.current?.tests ?? [];
+		if (!tests.length) return '_No dataset loaded._';
+		const Q_kJmol = (b.config?.Q_kJmol as number) ?? 155;
+		const flowStrain = (b.config?.flowStrain as number) ?? 0.3;
+		try {
+			const zh = computeZH(tests, { Q_kJmol, flowStrain });
+			if (!zh) return '_Zener–Hollomon regression unavailable._';
+			return `slope = **${zh.slope.toFixed(4)}**, intercept = **${zh.intercept.toFixed(4)}**, R² = **${zh.r2.toFixed(4)}** (${zh.points.length} tests).`;
+		} catch {
+			return '_Zener–Hollomon regression failed._';
+		}
+	}
+
+	function renderNoteMd(b: Block): string {
+		const text = (b.config?.text as string) ?? '';
+		if (!text.trim()) return '_(empty note)_';
+		// Quote the note as a blockquote for clarity.
+		return text
+			.split('\n')
+			.map((ln) => `> ${ln}`)
+			.join('\n');
+	}
+
+	function renderDatasetSummaryMd(): string {
+		const ds = datasetStore.current;
+		if (!ds) return '_No dataset loaded._';
+		const lines: string[] = [];
+		lines.push(`- **Name**: ${ds.name}`);
+		lines.push(`- **Tests**: ${ds.tests.length}`);
+		lines.push(`- **Info columns**: ${(ds.info_columns ?? []).join(', ') || '—'}`);
+		if (ds.description) lines.push(`- **Description**: ${ds.description}`);
+		return lines.join('\n');
+	}
+
+	function buildMarkdown(): string {
+		const ds = datasetStore.current;
+		const dsLine = ds
+			? `Dataset: **${ds.name}** (${ds.tests.length} tests)`
+			: 'Dataset: _none loaded_';
+		const ts = new Date().toLocaleString();
+		const out: string[] = [];
+		out.push(`# paramaterial report`);
+		out.push('');
+		out.push(dsLine);
+		out.push('');
+		out.push(`_Exported ${ts}_`);
+		out.push('');
+
+		const list = blocksStore.list;
+		list.forEach((b, i) => {
+			const idx = i + 1;
+			out.push(`## ${titleForBlock(b, idx)}`);
+			out.push('');
+			switch (b.type) {
+				case 'dataset-picker':
+					out.push(ds ? `Loaded: **${ds.name}** (${ds.tests.length} tests)` : '_No dataset picked._');
+					break;
+				case 'stress-strain':
+					out.push(renderStressStrainMd(b));
+					break;
+				case 'foot-correction':
+					out.push(renderFootCorrectionMd(b));
+					break;
+				case 'property-table':
+					out.push(renderPropertyTableMd());
+					break;
+				case 'representative-curves':
+					out.push(renderRepresentativeCurvesMd(b));
+					break;
+				case 'scatter':
+					out.push(renderScatterMd(b));
+					break;
+				case 'ramberg-osgood':
+					out.push(renderRambergOsgoodMd());
+					break;
+				case 'zener-hollomon':
+					out.push(renderZenerHollomonMd(b));
+					break;
+				case 'note':
+					out.push(renderNoteMd(b));
+					break;
+				default:
+					// Handle "dataset-summary" or any future types.
+					if ((b.type as string) === 'dataset-summary') {
+						out.push(renderDatasetSummaryMd());
+					} else {
+						out.push(`_Block type \`${b.type}\` — no summary renderer._`);
+					}
+			}
+			out.push('');
+		});
+		return out.join('\n');
+	}
+
+	function downloadMarkdown() {
+		const md = buildMarkdown();
+		const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `paramaterial-report-${timestamp()}.md`;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+		open = false;
+	}
+
+	// ---------- Shareable link ----------
+
+	interface PersistableBlock {
+		id: string;
+		type: string;
+		title?: string;
+		config: Record<string, unknown>;
+	}
+
+	function pickPersistable(b: Block): PersistableBlock {
+		// Drop createdAt / other transient fields and JSON-round-trip config
+		// to strip non-serializable values (functions, DOM nodes, etc.).
+		let configCopy: Record<string, unknown> = {};
+		try {
+			configCopy = JSON.parse(JSON.stringify(b.config ?? {}));
+		} catch {
+			configCopy = {};
+		}
+		const out: PersistableBlock = {
+			id: b.id,
+			type: b.type,
+			config: configCopy
+		};
+		if (b.title) out.title = b.title;
+		return out;
+	}
+
+	const MAX_URL_LEN = 8000;
+
+	async function copyLink() {
+		const payload = {
+			v: 1,
+			blocks: blocksStore.list.map(pickPersistable),
+			datasetId:
+				datasetStore.current?.id && datasetStore.current.id !== 'upload'
+					? datasetStore.current.id
+					: null
+		};
+		const json = JSON.stringify(payload);
+		let encoded: string;
+		try {
+			encoded = btoa(encodeURIComponent(json));
+		} catch {
+			showToast('Link encoding failed');
+			open = false;
+			return;
+		}
+		const url = `${location.origin}${location.pathname}?state=${encoded}`;
+		if (url.length > MAX_URL_LEN) {
+			showToast('Report too large to link — use Download JSON');
+			open = false;
+			return;
+		}
+		try {
+			await navigator.clipboard.writeText(url);
+			showToast('Link copied');
+		} catch {
+			// Fallback: stash on a prompt so the user can still copy manually.
+			try {
+				window.prompt('Copy the shareable link:', url);
+				showToast('Link ready');
+			} catch {
+				showToast('Copy failed');
+			}
+		}
+		open = false;
+	}
+
 	function clearAllAction() {
 		if (!confirm('Clear the whole report and chat? This cannot be undone.')) return;
 		blocksStore.clear();
@@ -181,7 +505,7 @@ ${body}
 		></button>
 		<div
 			role="menu"
-			class="absolute right-0 z-40 mt-1 w-52 overflow-hidden rounded-md border border-neutral-800 bg-neutral-900 text-xs shadow-xl"
+			class="absolute right-0 z-40 mt-1 w-56 overflow-hidden rounded-md border border-neutral-800 bg-neutral-900 text-xs shadow-xl"
 		>
 			<button
 				type="button"
@@ -190,6 +514,14 @@ ${body}
 				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
 			>
 				Download JSON
+			</button>
+			<button
+				type="button"
+				role="menuitem"
+				onclick={downloadMarkdown}
+				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
+			>
+				Download Markdown
 			</button>
 			<button
 				type="button"
@@ -206,6 +538,14 @@ ${body}
 				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
 			>
 				Print-ready HTML
+			</button>
+			<button
+				type="button"
+				role="menuitem"
+				onclick={copyLink}
+				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
+			>
+				Copy link
 			</button>
 			<div class="border-t border-neutral-800"></div>
 			<button
@@ -226,4 +566,14 @@ ${body}
 		class="hidden"
 		onchange={handleImport}
 	/>
+
+	{#if toast}
+		<div
+			role="status"
+			aria-live="polite"
+			class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md border border-neutral-700 bg-neutral-900/95 px-3 py-1.5 text-xs text-neutral-100 shadow-lg"
+		>
+			{toast}
+		</div>
+	{/if}
 </div>
