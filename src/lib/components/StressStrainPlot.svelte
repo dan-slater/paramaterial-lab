@@ -10,6 +10,7 @@
 		showOffset?: boolean;
 		offsetStrain?: number;
 		offsetE?: number;
+		hiddenGroups?: Set<string>;
 	}
 
 	let {
@@ -18,14 +19,24 @@
 		height = 480,
 		showOffset = false,
 		offsetStrain = 0.002,
-		offsetE
+		offsetE,
+		hiddenGroups = new Set<string>()
 	}: Props = $props();
 
 	let container: HTMLDivElement;
 	let plot: uPlot | null = null;
+	let focusedIdx: number | null = null; // 1-based series index
+	let isolatedIdx: number | null = null; // 1-based series index; null = no isolation
+	let tooltipState = $state<{
+		visible: boolean;
+		left: number;
+		top: number;
+		placeRight: boolean;
+		test: Test | null;
+		strain: number;
+		stress: number;
+	}>({ visible: false, left: 0, top: 0, placeRight: false, test: null, strain: 0, stress: 0 });
 
-	// Viridis-inspired colormap — avoids near-black endpoints that disappear
-	// against the dark background.
 	const palette = [
 		'#6a00a8', '#8f0da4', '#b12a90', '#cc4778',
 		'#e16462', '#f2844b', '#fca636', '#fcce25', '#f0f921'
@@ -40,10 +51,14 @@
 			const idx = Math.min(palette.length - 1, Math.max(0, Math.floor(t * (palette.length - 1))));
 			return palette[idx];
 		}
-		// categorical fallback — hash to palette index
 		const unique = Array.from(new Set(all.map(String)));
 		const idx = unique.indexOf(String(value));
 		return palette[idx % palette.length];
+	}
+
+	function isInitiallyHidden(t: Test): boolean {
+		const groupVal = String(t.meta[colorBy] ?? '');
+		return hiddenGroups.has(groupVal);
 	}
 
 	function buildOpts(tests: Test[], width: number): uPlot.Options {
@@ -56,7 +71,8 @@
 				width: 1.2,
 				alpha: 0.75,
 				points: { show: false },
-				spanGaps: false
+				spanGaps: false,
+				show: !isInitiallyHidden(t)
 			}))
 		];
 		if (showOffset) {
@@ -69,7 +85,6 @@
 				spanGaps: false
 			});
 		}
-		// Compute explicit y range from data (avoid uPlot's auto-scale if it's failing)
 		let yMin = Infinity, yMax = -Infinity;
 		for (const t of tests) {
 			for (const v of t.stress) {
@@ -106,14 +121,62 @@
 			cursor: {
 				drag: { x: true, y: true, uni: 50 },
 				focus: { prox: 16 }
+			},
+			hooks: {
+				setSeries: [
+					(_u, sIdx) => {
+						// Fires when focus moves between series (or series toggled).
+						focusedIdx = sIdx && sIdx >= 1 && sIdx <= tests.length ? sIdx : null;
+						updateTooltipFromCursor();
+					}
+				],
+				setCursor: [
+					(_u) => {
+						updateTooltipFromCursor();
+					}
+				]
 			}
 		};
 	}
 
+	function updateTooltipFromCursor() {
+		if (!plot) {
+			tooltipState.visible = false;
+			return;
+		}
+		const fIdx = focusedIdx;
+		const idx = plot.cursor.idx;
+		const left = plot.cursor.left ?? -1;
+		const top = plot.cursor.top ?? -1;
+		if (fIdx == null || idx == null || left < 0 || top < 0) {
+			tooltipState.visible = false;
+			return;
+		}
+		const t = tests[fIdx - 1];
+		if (!t) {
+			tooltipState.visible = false;
+			return;
+		}
+		const xVal = plot.data[0][idx];
+		const yVal = plot.data[fIdx]?.[idx];
+		if (yVal == null || !Number.isFinite(yVal) || xVal == null) {
+			tooltipState.visible = false;
+			return;
+		}
+		const plotW = container?.clientWidth ?? 0;
+		const placeRight = left < plotW / 2;
+		tooltipState = {
+			visible: true,
+			left,
+			top,
+			placeRight,
+			test: t,
+			strain: xVal as number,
+			stress: yVal as number
+		};
+	}
+
 	function buildData(tests: Test[]): uPlot.AlignedData {
-		// Raw strain data can be non-monotonic (elastic-region noise around zero).
-		// uPlot requires strictly increasing x, so build a synthetic linspace grid
-		// over the union range, then interpolate each test's (strain → stress) onto it.
 		let minX = Infinity;
 		let maxX = -Infinity;
 		for (const t of tests) {
@@ -133,8 +196,6 @@
 		for (const t of tests) {
 			const sx = t.strain;
 			const sy = t.stress;
-			// First sort (sx, sy) by x ascending to tolerate noisy test data.
-			// The paired sort is cheap: build indices array, sort, apply.
 			const idx = Array.from(sx.keys()).sort((a, b) => sx[a] - sx[b]);
 			const sxs = new Array<number>(sx.length);
 			const sys = new Array<number>(sx.length);
@@ -166,8 +227,6 @@
 			data.push(y);
 		}
 		if (showOffset && typeof offsetE === 'number' && Number.isFinite(offsetE) && offsetE > 0) {
-			// y = E · (x − offsetStrain), clipped to the positive stress region of the plot
-			// Compute the per-test max stress to pick a reasonable clip
 			let yMaxAll = -Infinity;
 			for (const t of tests) {
 				for (const v of t.stress) {
@@ -177,7 +236,6 @@
 			const offsetY = new Array<number>(N);
 			for (let i = 0; i < N; i++) {
 				const ye = offsetE * (x[i] - offsetStrain);
-				// Clip below 0 and above max stress to NaN so the line doesn't distort the plot
 				offsetY[i] = ye < 0 || ye > yMaxAll * 1.05 ? NaN : ye;
 			}
 			data.push(offsetY);
@@ -185,9 +243,38 @@
 		return data;
 	}
 
+	function handleClick(ev: MouseEvent) {
+		if (!plot) return;
+		const fIdx = focusedIdx;
+		if (fIdx == null) {
+			// click on background → reset isolation
+			if (isolatedIdx !== null) applyVisibility(null);
+			return;
+		}
+		ev.stopPropagation();
+		applyVisibility(isolatedIdx === fIdx ? null : fIdx);
+	}
+
+	function applyVisibility(newIsolated: number | null) {
+		if (!plot) return;
+		isolatedIdx = newIsolated;
+		for (let i = 1; i <= tests.length; i++) {
+			const t = tests[i - 1];
+			const groupVal = String(t.meta[colorBy] ?? '');
+			const groupHidden = hiddenGroups.has(groupVal);
+			const isolatedHide = newIsolated !== null && newIsolated !== i;
+			const show = !groupHidden && !isolatedHide;
+			plot.setSeries(i, { show });
+		}
+	}
+
 	function render() {
 		if (!container) return;
 		plot?.destroy();
+		plot = null;
+		focusedIdx = null;
+		isolatedIdx = null;
+		tooltipState.visible = false;
 		if (!tests.length) return;
 		const opts = buildOpts(tests, container.clientWidth);
 		const data = buildData(tests);
@@ -206,7 +293,7 @@
 	onDestroy(() => plot?.destroy());
 
 	$effect(() => {
-		// re-render when props change
+		// Re-render when tests/colorBy/offset-related props change (structure changes).
 		tests;
 		colorBy;
 		showOffset;
@@ -214,6 +301,44 @@
 		offsetE;
 		render();
 	});
+
+	// When only hiddenGroups changes, update visibility in-place without rebuild.
+	$effect(() => {
+		hiddenGroups;
+		if (plot) applyVisibility(isolatedIdx);
+	});
+
+	function formatMetaValue(v: unknown): string {
+		if (v == null) return '—';
+		if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toPrecision(4);
+		return String(v);
+	}
 </script>
 
-<div bind:this={container} class="w-full"></div>
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div bind:this={container} class="relative w-full" onclick={handleClick}>
+	{#if tooltipState.visible && tooltipState.test}
+		{@const offset = 12}
+		{@const cw = container?.clientWidth ?? 0}
+		<div
+			class="pointer-events-none absolute z-10 max-w-xs rounded-md border border-neutral-700 bg-neutral-950/95 px-2.5 py-2 text-xs text-neutral-200 shadow-lg"
+			style={tooltipState.placeRight
+				? `left: ${tooltipState.left + offset}px; top: ${Math.max(0, tooltipState.top - offset)}px;`
+				: `right: ${cw - tooltipState.left + offset}px; top: ${Math.max(0, tooltipState.top - offset)}px;`}
+		>
+			<div class="font-mono text-[11px] text-plasma-400">{tooltipState.test.test_id}</div>
+			<div class="mt-0.5 tabular-nums text-neutral-400">
+				ε = {tooltipState.strain.toPrecision(4)}, σ = {tooltipState.stress.toFixed(1)} MPa
+			</div>
+			{#if Object.keys(tooltipState.test.meta).length}
+				<div class="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
+					{#each Object.entries(tooltipState.test.meta) as [k, v]}
+						<span class="text-neutral-500">{k}</span>
+						<span class="truncate text-neutral-300">{formatMetaValue(v)}</span>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
+</div>

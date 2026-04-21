@@ -42,7 +42,7 @@ async function runForViewport(label, deviceName, viewport) {
 	await page.screenshot({ path: join(OUT, `${label}-02-dataset-loaded.png`), fullPage: true });
 
 	// Click each tool in the palette by firing the click directly (palette scrolls horizontally)
-	for (const tool of ['Stress–strain', 'Foot correction', 'Properties table', 'Representative curves', 'Parameter scatter', 'Ramberg–Osgood', 'Zener–Hollomon']) {
+	for (const tool of ['Stress–strain', 'Foot correction', 'Properties table', 'Representative curves', 'Parameter scatter', 'Ramberg–Osgood', 'Zener–Hollomon', 'Dataset summary']) {
 		await page.evaluate((t) => {
 			const btn = [...document.querySelectorAll('button')].find((b) =>
 				b.textContent?.includes(t)

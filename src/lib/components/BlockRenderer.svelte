@@ -11,6 +11,7 @@
 	import ScatterBlock from './blocks/ScatterBlock.svelte';
 	import RambergOsgoodBlock from './blocks/RambergOsgoodBlock.svelte';
 	import ZenerHollomonBlock from './blocks/ZenerHollomonBlock.svelte';
+	import DatasetSummaryBlock from './blocks/DatasetSummaryBlock.svelte';
 	import NoteBlock from './blocks/NoteBlock.svelte';
 
 	interface Props {
@@ -50,6 +51,8 @@
 		<RambergOsgoodBlock id={block.id} config={block.config} />
 	{:else if block.type === 'zener-hollomon'}
 		<ZenerHollomonBlock id={block.id} config={block.config} />
+	{:else if block.type === 'dataset-summary'}
+		<DatasetSummaryBlock id={block.id} config={block.config} />
 	{:else if block.type === 'note'}
 		<NoteBlock id={block.id} config={block.config} />
 	{/if}
