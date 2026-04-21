@@ -78,11 +78,24 @@ function hydrateBlock(spec: TemplateBlockSpec): Block {
 	};
 }
 
-/** Replace the current blocks list with a hydrated copy of the named template. */
+/** Replace the current blocks list with a hydrated copy of the named template.
+ *  Preserves the currently-loaded dataset (picker's config.id / uploaded flag)
+ *  so applying a template doesn't kick the user back to the empty picker. */
 export function applyTemplate(id: string): boolean {
 	const tpl = REPORT_TEMPLATES.find((t) => t.id === id);
 	if (!tpl) return false;
-	const blocks = tpl.blocks.map(hydrateBlock);
+	const existingPicker = blocksStore.list.find((b) => b.type === 'dataset-picker');
+	const carryConfig =
+		existingPicker && (existingPicker.config?.id || existingPicker.config?.uploaded)
+			? { ...existingPicker.config }
+			: null;
+	const blocks = tpl.blocks.map((spec, i) => {
+		const b = hydrateBlock(spec);
+		if (i === 0 && spec.type === 'dataset-picker' && carryConfig) {
+			b.config = { ...b.config, ...carryConfig };
+		}
+		return b;
+	});
 	blocksStore.replaceAll(blocks);
 	return true;
 }
