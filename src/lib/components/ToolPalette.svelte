@@ -12,10 +12,12 @@
 
 <div
 	id="tool-palette"
-	class="pointer-events-auto flex max-w-full gap-2 overflow-x-auto rounded-xl border border-neutral-800 bg-neutral-900/90 p-2 shadow-xl backdrop-blur"
+	class="pointer-events-auto flex max-w-full gap-2 overflow-x-auto rounded-xl border p-2 backdrop-blur"
+	style="background: color-mix(in srgb, var(--surface-raised) 92%, transparent); border-color: var(--border-default); box-shadow: var(--shadow-md);"
 >
-	<span class="shrink-0 self-center pl-2 pr-1 text-[10px] uppercase tracking-wider text-neutral-500"
-		>Add block</span
+	<span
+		class="caption-eyebrow shrink-0 self-center pl-2 pr-1"
+		style="font-size: 10px;">Add block</span
 	>
 	{#each TOOLS as t, i}
 		<button
@@ -23,9 +25,29 @@
 			id={i === 0 ? 'tool-palette-first' : undefined}
 			onclick={() => addAndScroll(t.type)}
 			title={t.description}
-			class="group flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-700 bg-neutral-800/70 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-plasma-500 hover:bg-plasma-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-plasma-500"
+			class="group flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-colors focus:outline-none"
+			style="background: var(--surface-chip); border-color: var(--border-default); color: var(--text-secondary);"
+			onmouseenter={(e) => {
+				const el = e.currentTarget as HTMLButtonElement;
+				el.style.borderColor = 'var(--accent-ui-strong)';
+				el.style.background = 'var(--surface-card-hover)';
+				el.style.color = 'var(--text-primary)';
+			}}
+			onmouseleave={(e) => {
+				const el = e.currentTarget as HTMLButtonElement;
+				el.style.borderColor = 'var(--border-default)';
+				el.style.background = 'var(--surface-chip)';
+				el.style.color = 'var(--text-secondary)';
+			}}
+			onfocus={(e) => {
+				const el = e.currentTarget as HTMLButtonElement;
+				el.style.boxShadow = '0 0 0 2px var(--accent-ui-strong)';
+			}}
+			onblur={(e) => {
+				(e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
+			}}
 		>
-			<span class="font-mono text-sm text-plasma-400 group-hover:text-white">{t.icon}</span>
+			<span class="font-mono text-sm" style="color: var(--accent-ui-strong);">{t.icon}</span>
 			<span>{t.label}</span>
 		</button>
 	{/each}

@@ -43,20 +43,38 @@
 	}
 </script>
 
-<aside class="flex h-full min-h-0 flex-col border-l border-neutral-800 bg-neutral-950">
-	<header class="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5">
+<aside
+	class="flex h-full min-h-0 flex-col border-l"
+	style="background: var(--surface-page); border-color: var(--border-default);"
+>
+	<header
+		class="flex items-center justify-between border-b px-4 py-2.5"
+		style="border-color: var(--border-default);"
+	>
 		<div>
-			<p class="text-xs uppercase tracking-wider text-neutral-500">Chat</p>
-			<h2 class="text-sm font-semibold tracking-tight">Assistant</h2>
-			<p class="mt-0.5 text-[10px] text-neutral-500" data-testid="chat-mode">
+			<p class="caption-eyebrow">Chat</p>
+			<h2
+				class="text-sm font-semibold tracking-tight"
+				style="font-family: var(--font-serif); color: var(--text-primary);"
+			>
+				Assistant
+			</h2>
+			<p
+				class="mt-0.5 text-[10px]"
+				style="color: var(--text-muted);"
+				data-testid="chat-mode"
+			>
 				{#if chatStore.usingClaude}
 					<span class="inline-flex items-center gap-1">
-						<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+						<span class="h-1.5 w-1.5 rounded-full" style="background: #10b981;"></span>
 						using Claude
 					</span>
 				{:else}
 					<span class="inline-flex items-center gap-1">
-						<span class="h-1.5 w-1.5 rounded-full bg-neutral-600"></span>
+						<span
+							class="h-1.5 w-1.5 rounded-full"
+							style="background: var(--text-subtle);"
+						></span>
 						rule-based (no API key)
 					</span>
 				{/if}
@@ -68,7 +86,8 @@
 				onclick={openSettings}
 				aria-label="Chat settings"
 				title="API key settings"
-				class="rounded-md border border-neutral-800 px-2 py-1 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-300"
+				class="rounded-md border px-2 py-1 transition-colors"
+				style="border-color: var(--border-default); color: var(--text-muted);"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -90,7 +109,8 @@
 			<button
 				type="button"
 				onclick={() => chatStore.clear()}
-				class="rounded-md border border-neutral-800 px-2 py-1 text-[10px] text-neutral-500 hover:bg-neutral-900 hover:text-neutral-300"
+				class="rounded-md border px-2 py-1 text-[10px] transition-colors"
+				style="border-color: var(--border-default); color: var(--text-muted);"
 			>
 				Clear
 			</button>
@@ -101,23 +121,23 @@
 		{#each chatStore.messages as m (m.id)}
 			<div class="flex gap-2 text-sm">
 				<span
-					class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-medium
-					{m.role === 'user'
-						? 'bg-plasma-600 text-white'
+					class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-medium"
+					style={m.role === 'user'
+						? 'background: var(--color-plasma-600); color: white;'
 						: m.error
-							? 'bg-red-900/40 text-red-300'
-							: 'bg-neutral-800 text-plasma-400'}"
+							? 'background: rgb(100 20 20 / 0.4); color: #fca5a5;'
+							: 'background: var(--surface-chip); color: var(--accent-ui-strong);'}
 				>
 					{m.role === 'user' ? 'You' : m.error ? '!' : 'AI'}
 				</span>
 				<div class="min-w-0 flex-1">
 					<div
-						class="rounded-lg px-3 py-2 text-sm leading-relaxed
-						{m.role === 'user'
-							? 'bg-plasma-600/20 text-plasma-100'
+						class="rounded-lg px-3 py-2 text-sm leading-relaxed"
+						style={m.role === 'user'
+							? 'background: color-mix(in srgb, var(--color-plasma-600) 16%, transparent); color: var(--text-primary);'
 							: m.error
-								? 'border border-red-900/60 bg-red-950/40 text-red-200'
-								: 'bg-neutral-900 text-neutral-200'}"
+								? 'border: 1px solid rgb(150 40 40 / 0.5); background: rgb(100 20 20 / 0.25); color: #fca5a5;'
+								: 'background: var(--surface-card); color: var(--text-primary);'}
 					>
 						{@html formatText(m.text)}
 					</div>
@@ -125,11 +145,11 @@
 			</div>
 		{/each}
 		{#if chatStore.busy}
-			<p class="pl-10 text-xs text-neutral-500">thinking…</p>
+			<p class="pl-10 text-xs italic" style="color: var(--text-muted); font-family: var(--font-serif);">thinking…</p>
 		{/if}
 	</div>
 
-	<form onsubmit={onSubmit} class="border-t border-neutral-800 p-3">
+	<form onsubmit={onSubmit} class="border-t p-3" style="border-color: var(--border-default);">
 		<div class="flex items-end gap-2">
 			<textarea
 				bind:value={input}
@@ -141,18 +161,21 @@
 						onSubmit(e);
 					}
 				}}
-				class="min-h-0 flex-1 resize-none rounded-md border border-neutral-800 bg-neutral-900 p-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-plasma-500 focus:outline-none"
+				class="min-h-0 flex-1 resize-none rounded-md border p-2 text-sm focus:outline-none"
+				style="background: var(--surface-card); border-color: var(--border-default); color: var(--text-primary);"
 			></textarea>
 			<button
 				type="submit"
 				disabled={chatStore.busy || !input.trim()}
-				class="shrink-0 rounded-md bg-plasma-600 px-3 py-2 text-xs font-medium text-white hover:bg-plasma-500 disabled:cursor-not-allowed disabled:bg-neutral-800 disabled:text-neutral-600"
+				class="shrink-0 rounded-md px-3 py-2 text-xs font-medium text-white transition-colors disabled:cursor-not-allowed"
+				style="background: var(--color-plasma-600);"
 			>
 				Send
 			</button>
 		</div>
-		<p class="mt-1 text-[10px] text-neutral-600">
-			Tip: "plot stress strain", "find proof stress", "representative by temperature", "UTS vs temperature".
+		<p class="mt-1 text-[10px] italic" style="color: var(--text-muted); font-family: var(--font-serif);">
+			Tip: "plot stress strain", "find proof stress", "representative by temperature", "UTS vs
+			temperature".
 		</p>
 	</form>
 </aside>

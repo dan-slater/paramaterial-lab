@@ -23,7 +23,8 @@
 	<button
 		type="button"
 		onclick={() => (open = !open)}
-		class="rounded-md border border-neutral-800 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
+		class="rounded-md border px-2 py-1 text-xs transition-colors"
+		style="border-color: var(--border-default); color: var(--text-secondary);"
 		aria-expanded={open}
 		aria-haspopup="menu"
 	>
@@ -39,17 +40,27 @@
 		></button>
 		<div
 			role="menu"
-			class="absolute right-0 z-40 mt-1 w-72 overflow-hidden rounded-md border border-neutral-800 bg-neutral-900 text-xs shadow-xl"
+			class="absolute right-0 z-40 mt-1 w-72 overflow-hidden rounded-md border text-xs"
+			style="background: var(--surface-card); border-color: var(--border-strong); box-shadow: var(--shadow-md);"
 		>
 			{#each REPORT_TEMPLATES as tpl (tpl.id)}
 				<button
 					type="button"
 					role="menuitem"
 					onclick={() => pick(tpl.id)}
-					class="block w-full border-b border-neutral-800 px-3 py-2 text-left last:border-b-0 hover:bg-neutral-800"
+					class="block w-full border-b px-3 py-2 text-left last:border-b-0 transition-colors"
+					style="border-color: var(--border-default);"
 				>
-					<div class="font-medium text-neutral-100">{tpl.name}</div>
-					<div class="mt-0.5 text-[11px] leading-snug text-neutral-400">
+					<div
+						class="font-semibold"
+						style="font-family: var(--font-serif); color: var(--text-primary); letter-spacing: -0.005em;"
+					>
+						{tpl.name}
+					</div>
+					<div
+						class="mt-0.5 text-[11px] leading-snug italic"
+						style="color: var(--text-secondary); font-family: var(--font-serif);"
+					>
 						{tpl.description}
 					</div>
 				</button>

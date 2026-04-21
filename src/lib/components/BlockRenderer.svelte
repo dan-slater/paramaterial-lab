@@ -23,10 +23,44 @@
 
 	const isDatasetPicker = $derived(block.type === 'dataset-picker');
 	const total = $derived(blocksStore.list.length);
+
+	// Categorize block types into figure / table / note / header for numbering.
+	function categoryOf(t: Block['type']): 'figure' | 'table' | 'note' | 'header' {
+		switch (t) {
+			case 'stress-strain':
+			case 'foot-correction':
+			case 'representative-curves':
+			case 'scatter':
+			case 'ramberg-osgood':
+			case 'zener-hollomon':
+				return 'figure';
+			case 'property-table':
+			case 'dataset-summary':
+				return 'table';
+			case 'note':
+				return 'note';
+			default:
+				return 'header';
+		}
+	}
+
+	// Count how many same-category blocks come at or before this index.
+	const captionInfo = $derived.by<{ label: string; kind: string } | null>(() => {
+		const list = blocksStore.list;
+		const cat = categoryOf(block.type);
+		if (cat === 'header') return null;
+		let n = 0;
+		for (let k = 0; k <= index && k < list.length; k++) {
+			if (categoryOf(list[k].type) === cat) n++;
+		}
+		const word = cat === 'figure' ? 'Figure' : cat === 'table' ? 'Table' : 'Note';
+		return { label: `${word} ${n}`, kind: cat };
+	});
 </script>
 
 <article
-	class="relative rounded-lg border border-neutral-800 bg-neutral-900 p-5 pt-11"
+	class="relative report-card overflow-hidden"
+	style="background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 1.5rem 1.5rem 1.25rem; box-shadow: var(--shadow-card);"
 	in:fly|global={{ y: 8, duration: 180 }}
 >
 	<BlockToolbar
@@ -35,6 +69,15 @@
 		{total}
 		variant={isDatasetPicker ? 'index-only' : 'full'}
 	/>
+	{#if captionInfo}
+		<p
+			class="caption-eyebrow mb-1"
+			data-caption-kind={captionInfo.kind}
+			style="margin-top: -0.25rem;"
+		>
+			{captionInfo.label}
+		</p>
+	{/if}
 	{#if block.type === 'dataset-picker'}
 		<DatasetPickerBlock />
 	{:else if block.type === 'stress-strain'}
@@ -57,3 +100,29 @@
 		<NoteBlock id={block.id} config={block.config} />
 	{/if}
 </article>
+
+<style>
+	/* Subtle top highlight + hover glow; kept outside the @theme block since it
+	   uses a pseudo approach: ::before for the top highlight won't interfere. */
+	.report-card::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		pointer-events: none;
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+	}
+	.report-card {
+		transition: border-color 140ms ease, box-shadow 180ms ease;
+	}
+	.report-card:hover {
+		border-color: var(--border-strong);
+	}
+	/* Padding a bit more on top to accommodate the floating toolbar. */
+	:global([data-theme='light']) .report-card::before {
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6);
+	}
+	article.report-card {
+		padding-top: 2.75rem;
+	}
+</style>

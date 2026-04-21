@@ -10,6 +10,9 @@
 	<title>paramaterial</title>
 </svelte:head>
 
-<div class="flex h-screen flex-col overflow-hidden bg-neutral-950 text-neutral-100">
+<div
+	class="flex h-screen flex-col overflow-hidden"
+	style="background: var(--surface-page); color: var(--text-primary);"
+>
 	{@render children()}
 </div>

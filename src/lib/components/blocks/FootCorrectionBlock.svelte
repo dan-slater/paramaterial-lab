@@ -121,18 +121,24 @@
 
 <div class="flex items-start justify-between gap-4">
 	<div>
-		<p class="text-xs uppercase tracking-wider text-neutral-500">Foot correction</p>
-		<h2 class="mt-0.5 text-xl font-semibold tracking-tight">Elastic region + Young's modulus</h2>
-		<p class="mt-1 text-sm text-neutral-400">
+		<p class="caption-eyebrow">Foot correction</p>
+		<h2
+			class="block-title mt-1 text-2xl font-semibold"
+			style="color: var(--text-primary); letter-spacing: -0.01em;"
+		>
+			Elastic region + Young's modulus
+		</h2>
+		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
 			Sliding-window linear fit finds UPL / LPL. E is the slope through the chosen window.
 		</p>
 	</div>
 	{#if tests.length}
 		<label class="flex shrink-0 items-center gap-2 text-xs">
-			<span class="text-neutral-500">Test</span>
+			<span style="color: var(--text-muted);">Test</span>
 			<select
 				bind:value={testId}
-				class="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs font-mono"
+				class="rounded-md border px-2 py-1 text-xs font-mono"
+				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 			>
 				{#each tests as t (t.test_id)}
 					<option value={t.test_id}>{t.test_id}</option>
@@ -143,27 +149,27 @@
 </div>
 
 {#if fit}
-	<div class="mt-3 grid gap-3 sm:grid-cols-3">
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">E</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">
-				{fit.E.toFixed(0)} <span class="text-xs font-normal text-neutral-500">MPa</span>
+	<div class="mt-4 grid gap-3 sm:grid-cols-3">
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">E</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">
+				{fit.E.toFixed(0)} <span class="text-xs font-normal" style="color: var(--text-muted);">MPa</span>
 			</p>
 		</div>
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">UPL index</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{fit.uplIdx}</p>
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">UPL index</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{fit.uplIdx}</p>
 		</div>
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">LPL index</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{fit.lplIdx}</p>
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">LPL index</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{fit.lplIdx}</p>
 		</div>
 	</div>
 {/if}
-<div class="mt-3 rounded-md border border-neutral-800 bg-neutral-950 p-2">
+<div class="mt-4 rounded-md border p-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
 	<div bind:this={container} class="w-full"></div>
 	{#if !tests.length}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">Load a dataset above.</p>
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 	{:else if !fit}
 		<p class="px-2 py-6 text-center text-sm text-red-400">Could not fit elastic region for this test.</p>
 	{/if}

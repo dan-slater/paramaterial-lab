@@ -112,25 +112,30 @@
 
 <div class="flex items-start justify-between gap-4">
 	<div>
-		<p class="text-xs uppercase tracking-wider text-neutral-500">Stress–strain</p>
-		<h2 class="mt-0.5 text-xl font-semibold tracking-tight">
+		<p class="caption-eyebrow">Stress–strain</p>
+		<h2
+			class="block-title mt-1 text-2xl font-semibold"
+			style="color: var(--text-primary); letter-spacing: -0.01em;"
+		>
 			All tests: stress vs strain
 		</h2>
-		<p class="mt-1 text-sm text-neutral-400">
-			{tests.length} curves, color-mapped by <span class="text-plasma-400">{colorBy || '—'}</span>.
+		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
+			{tests.length} curves, color-mapped by
+			<span style="color: var(--color-plasma-400); font-style: normal;">{colorBy || '—'}</span>.
 		</p>
 	</div>
 	<div class="flex shrink-0 flex-wrap items-center gap-2 text-xs">
-		<label class="flex items-center gap-1">
+		<label class="flex items-center gap-1" style="color: var(--text-secondary);">
 			<input type="checkbox" bind:checked={showOffset} class="accent-plasma-400" />
-			<span class="text-neutral-400">Show 0.2% offset line</span>
+			<span>Show 0.2% offset line</span>
 		</label>
 		{#if infoColumns.length}
 			<label class="flex items-center gap-1">
-				<span class="text-neutral-500">Color by</span>
+				<span style="color: var(--text-muted);">Color by</span>
 				<select
 					bind:value={colorBy}
-					class="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs"
+					class="rounded-md border px-2 py-1 text-xs"
+					style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 				>
 					{#each infoColumns as col}
 						<option value={col}>{col}</option>
@@ -142,9 +147,14 @@
 </div>
 
 {#if !tests.length}
-	<p class="mt-3 text-sm text-neutral-500">Load a dataset above to populate this plot.</p>
+	<p class="mt-3 text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">
+		Load a dataset above to populate this plot.
+	</p>
 {:else}
-	<div class="mt-3 rounded-md border border-neutral-800 bg-neutral-950 p-2">
+	<div
+		class="mt-4 rounded-md border p-2"
+		style="background: var(--surface-sunk); border-color: var(--border-default);"
+	>
 		<StressStrainPlot
 			{tests}
 			{colorBy}
@@ -155,7 +165,7 @@
 			{hiddenGroups}
 		/>
 	</div>
-	<p class="mt-2 text-[11px] text-neutral-500">
+	<p class="mt-2 text-[11px] italic" style="color: var(--text-muted); font-family: var(--font-serif);">
 		Hover a curve for details · click to isolate · click the background to reset.
 	</p>
 	{#if legendItems.length}
@@ -165,26 +175,25 @@
 				<button
 					type="button"
 					onclick={() => toggleGroup(item.value)}
-					class="flex items-center gap-1.5 rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-[11px] transition hover:border-neutral-700 {hidden
-						? 'opacity-40'
-						: ''}"
+					class="flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors {hidden ? 'opacity-40' : ''}"
+					style="background: var(--surface-chip); border-color: var(--border-default);"
 					title="Toggle {colorBy} = {item.value}"
 				>
 					<span
 						class="inline-block h-2.5 w-2.5 rounded-sm"
 						style="background: {item.color}; {hidden ? 'filter: grayscale(1);' : ''}"
 					></span>
-					<span class="tabular-nums text-neutral-300">{item.value || '—'}</span>
-					<span class="text-neutral-500">({item.count})</span>
+					<span class="tabular-nums" style="color: var(--text-secondary);">{item.value || '—'}</span>
+					<span style="color: var(--text-muted);">({item.count})</span>
 				</button>
 			{/each}
 		</div>
 	{/if}
 	{#if showOffset && offsetE !== undefined}
-		<p class="mt-2 text-xs text-neutral-500">
-			Offset line: y = <span class="text-plasma-400">{offsetE.toFixed(0)}</span> · (ε − 0.002)
+		<p class="mt-2 text-xs" style="color: var(--text-muted);">
+			Offset line: y = <span style="color: var(--color-plasma-400);">{offsetE.toFixed(0)}</span> · (ε − 0.002)
 		</p>
 	{:else if showOffset}
-		<p class="mt-2 text-xs text-neutral-500">Could not compute E for any test.</p>
+		<p class="mt-2 text-xs" style="color: var(--text-muted);">Could not compute E for any test.</p>
 	{/if}
 {/if}

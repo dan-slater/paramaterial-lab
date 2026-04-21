@@ -95,6 +95,14 @@
 			}
 		}
 		const yPad = (yMax - yMin) * 0.05;
+		// Pull chart chrome from the active theme so axes/grid respect light/dark.
+		const isLight =
+			typeof document !== 'undefined' &&
+			document.documentElement.getAttribute('data-theme') === 'light';
+		const axisStroke = isLight ? '#4e4a3d' : '#9ca3af';
+		const gridStroke = isLight ? 'rgba(40,35,25,0.12)' : '#27272a';
+		const tickStroke = isLight ? 'rgba(40,35,25,0.3)' : '#3f3f46';
+
 		return {
 			width,
 			height,
@@ -106,15 +114,15 @@
 			axes: [
 				{
 					label: 'Strain',
-					stroke: '#9ca3af',
-					grid: { stroke: '#27272a', width: 1 },
-					ticks: { stroke: '#3f3f46' }
+					stroke: axisStroke,
+					grid: { stroke: gridStroke, width: 1 },
+					ticks: { stroke: tickStroke }
 				},
 				{
 					label: 'Stress (MPa)',
-					stroke: '#9ca3af',
-					grid: { stroke: '#27272a', width: 1 },
-					ticks: { stroke: '#3f3f46' }
+					stroke: axisStroke,
+					grid: { stroke: gridStroke, width: 1 },
+					ticks: { stroke: tickStroke }
 				}
 			],
 			legend: { show: false },
@@ -322,20 +330,21 @@
 		{@const offset = 12}
 		{@const cw = container?.clientWidth ?? 0}
 		<div
-			class="pointer-events-none absolute z-10 max-w-xs rounded-md border border-neutral-700 bg-neutral-950/95 px-2.5 py-2 text-xs text-neutral-200 shadow-lg"
-			style={tooltipState.placeRight
-				? `left: ${tooltipState.left + offset}px; top: ${Math.max(0, tooltipState.top - offset)}px;`
-				: `right: ${cw - tooltipState.left + offset}px; top: ${Math.max(0, tooltipState.top - offset)}px;`}
+			data-testid="plot-tooltip"
+			class="pointer-events-none absolute z-10 max-w-xs rounded-md border px-2.5 py-2 text-xs"
+			style={`${tooltipState.placeRight
+				? `left: ${tooltipState.left + offset}px;`
+				: `right: ${cw - tooltipState.left + offset}px;`} top: ${Math.max(0, tooltipState.top - offset)}px; background: var(--surface-card); border-color: var(--border-strong); color: var(--text-primary); box-shadow: var(--shadow-md);`}
 		>
-			<div class="font-mono text-[11px] text-plasma-400">{tooltipState.test.test_id}</div>
-			<div class="mt-0.5 tabular-nums text-neutral-400">
+			<div class="font-mono text-[11px]" style="color: var(--color-plasma-400);">{tooltipState.test.test_id}</div>
+			<div class="mt-0.5 tabular-nums" style="color: var(--text-secondary);">
 				ε = {tooltipState.strain.toPrecision(4)}, σ = {tooltipState.stress.toFixed(1)} MPa
 			</div>
 			{#if Object.keys(tooltipState.test.meta).length}
 				<div class="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
 					{#each Object.entries(tooltipState.test.meta) as [k, v]}
-						<span class="text-neutral-500">{k}</span>
-						<span class="truncate text-neutral-300">{formatMetaValue(v)}</span>
+						<span style="color: var(--text-muted);">{k}</span>
+						<span class="truncate" style="color: var(--text-primary);">{formatMetaValue(v)}</span>
 					{/each}
 				</div>
 			{/if}

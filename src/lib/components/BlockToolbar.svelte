@@ -16,12 +16,14 @@
 </script>
 
 <div
-	class="absolute right-2 top-2 z-[2] flex h-8 items-center gap-1 rounded-md border border-neutral-800 bg-neutral-900/90 px-1 shadow-sm backdrop-blur"
+	class="absolute right-3 top-3 z-[2] flex h-8 items-center gap-1 rounded-md border px-1 backdrop-blur"
+	style="background: color-mix(in srgb, var(--surface-raised) 88%, transparent); border-color: var(--border-default); box-shadow: var(--shadow-sm);"
 	role="toolbar"
 	aria-label="Block controls"
 >
 	<span
-		class="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-[10px] leading-none text-neutral-400"
+		class="rounded px-1.5 py-0.5 font-mono text-[10px] leading-none"
+		style="background: var(--surface-chip); color: var(--text-muted);"
 		title="Block index"
 	>
 		#{index + 1}
@@ -34,7 +36,8 @@
 			disabled={!canMoveUp}
 			title="Move up"
 			aria-label="Move block up"
-			class="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition hover:bg-neutral-800 hover:text-plasma-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+			class="inline-flex h-6 w-6 items-center justify-center rounded transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+			style="color: var(--text-muted);"
 		>
 			<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 				<path
@@ -52,7 +55,8 @@
 			disabled={!canMoveDown}
 			title="Move down"
 			aria-label="Move block down"
-			class="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition hover:bg-neutral-800 hover:text-plasma-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+			class="inline-flex h-6 w-6 items-center justify-center rounded transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+			style="color: var(--text-muted);"
 		>
 			<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 				<path
@@ -69,7 +73,8 @@
 			onclick={() => blocksStore.duplicate(id)}
 			title="Duplicate"
 			aria-label="Duplicate block"
-			class="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition hover:bg-neutral-800 hover:text-plasma-300"
+			class="inline-flex h-6 w-6 items-center justify-center rounded transition-colors"
+			style="color: var(--text-muted);"
 		>
 			<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 				<rect
@@ -89,7 +94,7 @@
 					rx="1"
 					stroke="currentColor"
 					stroke-width="1.5"
-					fill="rgb(23 23 23)"
+					fill="var(--surface-card)"
 				/>
 			</svg>
 		</button>
@@ -98,7 +103,8 @@
 			onclick={() => blocksStore.remove(id)}
 			title="Remove"
 			aria-label="Remove block"
-			class="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition hover:bg-red-900/70 hover:text-red-200"
+			class="inline-flex h-6 w-6 items-center justify-center rounded transition-colors hover:text-red-400"
+			style="color: var(--text-muted);"
 		>
 			<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
 				<path

@@ -53,23 +53,37 @@
 {#if datasetStore.current}
 	<div class="flex items-start justify-between gap-4">
 		<div>
-			<p class="text-xs uppercase tracking-wider text-neutral-500">Dataset</p>
-			<h2 class="mt-0.5 text-xl font-semibold tracking-tight">{datasetStore.current.name}</h2>
-			<p class="mt-1 text-sm text-neutral-400">
+			<p class="caption-eyebrow">Dataset</p>
+			<h2
+				class="block-title mt-1 text-2xl font-semibold"
+				style="color: var(--text-primary); letter-spacing: -0.01em;"
+			>
+				{datasetStore.current.name}
+			</h2>
+			<p
+				class="caption-note mt-1 text-sm"
+				style="color: var(--text-secondary);"
+			>
 				{datasetStore.current.tests.length} tests · {datasetStore.current.description}
 			</p>
 		</div>
 		<button
 			onclick={() => datasetStore.clear()}
-			class="shrink-0 rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800"
+			class="shrink-0 rounded-md border px-3 py-1.5 text-xs transition-colors"
+			style="border-color: var(--border-default); color: var(--text-secondary);"
 		>
 			Change
 		</button>
 	</div>
 {:else}
-	<p class="text-xs uppercase tracking-wider text-neutral-500">Start here</p>
-	<h2 class="mt-0.5 text-xl font-semibold tracking-tight">Choose a dataset</h2>
-	<p class="mt-1 text-sm text-neutral-400">
+	<p class="caption-eyebrow">Start here</p>
+	<h2
+		class="block-title mt-1 text-2xl font-semibold"
+		style="color: var(--text-primary); letter-spacing: -0.01em;"
+	>
+		Choose a dataset
+	</h2>
+	<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
 		Pick a preset or upload a stress–strain CSV. Subsequent blocks will draw from this dataset.
 	</p>
 
@@ -78,21 +92,38 @@
 			<button
 				type="button"
 				onclick={() => selectPreset(ds.id)}
-				class="group rounded-md border border-neutral-800 bg-neutral-950 p-3 text-left transition hover:border-plasma-500 hover:bg-neutral-900"
+				class="group rounded-md border p-3 text-left transition-colors"
+				style="border-color: var(--border-default); background: var(--surface-sunk);"
+				onmouseenter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent-ui-strong)'; }}
+				onmouseleave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-default)'; }}
 			>
 				<div class="flex items-start justify-between gap-2">
-					<h3 class="text-sm font-medium">{ds.name}</h3>
-					<span class="shrink-0 rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400">
+					<h3
+						class="text-sm font-semibold"
+						style="font-family: var(--font-serif); color: var(--text-primary);"
+					>
+						{ds.name}
+					</h3>
+					<span
+						class="shrink-0 rounded-full px-2 py-0.5 text-[10px]"
+						style="background: var(--surface-chip); color: var(--text-muted);"
+					>
 						{ds.tests}
 					</span>
 				</div>
-				<p class="mt-1 text-xs text-neutral-400 line-clamp-2">{ds.description}</p>
+				<p
+					class="mt-1 text-xs line-clamp-2 italic"
+					style="color: var(--text-secondary); font-family: var(--font-serif);"
+				>
+					{ds.description}
+				</p>
 			</button>
 		{/each}
 	</div>
 
 	<label
-		class="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-neutral-700 bg-neutral-950/60 px-4 py-4 text-sm text-neutral-400 transition hover:border-plasma-500 hover:text-neutral-200"
+		class="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed px-4 py-4 text-sm transition-colors"
+		style="border-color: var(--border-default); color: var(--text-muted);"
 	>
 		<span>Upload CSV (Strain, Stress columns)</span>
 		<input type="file" accept=".csv" class="hidden" onchange={handleFile} disabled={uploading} />
@@ -101,7 +132,7 @@
 		<p class="mt-2 text-xs text-red-400">{uploadError}</p>
 	{/if}
 	{#if datasetStore.loading}
-		<p class="mt-2 text-xs text-neutral-500">Loading…</p>
+		<p class="mt-2 text-xs" style="color: var(--text-muted);">Loading…</p>
 	{/if}
 	{#if datasetStore.error}
 		<p class="mt-2 text-xs text-red-400">{datasetStore.error}</p>

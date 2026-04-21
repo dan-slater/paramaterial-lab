@@ -47,35 +47,58 @@
 </script>
 
 <div>
-	<p class="text-xs uppercase tracking-wider text-neutral-500">Properties table</p>
-	<h2 class="mt-0.5 text-xl font-semibold tracking-tight">Per-test UTS, E, 0.2% proof stress</h2>
-	<p class="mt-1 text-sm text-neutral-400">
+	<p class="caption-eyebrow">Properties table</p>
+	<h2
+		class="block-title mt-1 text-2xl font-semibold"
+		style="color: var(--text-primary); letter-spacing: -0.01em;"
+	>
+		Per-test UTS, E, 0.2% proof stress
+	</h2>
+	<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
 		Computed in-browser from the raw curves — {rows.length} tests analyzed.
 	</p>
 </div>
 
 {#if !tests.length}
-	<p class="mt-3 text-sm text-neutral-500">Load a dataset above.</p>
+	<p class="mt-3 text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 {:else}
-	<div class="mt-3 overflow-x-auto rounded-md border border-neutral-800">
+	<div class="mt-4 overflow-x-auto rounded-md border" style="border-color: var(--border-default);">
 		<table class="w-full text-sm">
-			<thead class="bg-neutral-900 text-xs uppercase tracking-wider text-neutral-400">
+			<thead style="background: var(--surface-chip);">
 				<tr>
-					<th class="px-3 py-2 text-left">Test ID</th>
+					<th
+						class="px-3 py-2 text-left caption-eyebrow"
+						style="font-size: 10px; color: var(--text-secondary);"
+					>Test ID</th>
 					{#each infoColumns.filter((c) => c !== 'test_id') as col}
-						<th class="px-3 py-2 text-left font-normal">{col}</th>
+						<th
+							class="px-3 py-2 text-left caption-eyebrow"
+							style="font-size: 10px; color: var(--text-secondary); font-weight: 500;"
+						>{col}</th>
 					{/each}
-					<th class="px-3 py-2 text-right">UTS (MPa)</th>
-					<th class="px-3 py-2 text-right">E (MPa)</th>
-					<th class="px-3 py-2 text-right">PS (MPa)</th>
+					<th
+						class="px-3 py-2 text-right caption-eyebrow"
+						style="font-size: 10px; color: var(--text-secondary);"
+					>UTS (MPa)</th>
+					<th
+						class="px-3 py-2 text-right caption-eyebrow"
+						style="font-size: 10px; color: var(--text-secondary);"
+					>E (MPa)</th>
+					<th
+						class="px-3 py-2 text-right caption-eyebrow"
+						style="font-size: 10px; color: var(--text-secondary);"
+					>PS (MPa)</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each visible as r (r.test_id)}
-					<tr class="border-t border-neutral-800/70 text-neutral-300 hover:bg-neutral-900/40">
+					<tr
+						class="border-t"
+						style="border-color: var(--border-default); color: var(--text-primary);"
+					>
 						<td class="px-3 py-1.5 font-mono text-xs">{r.test_id}</td>
 						{#each infoColumns.filter((c) => c !== 'test_id') as col}
-							<td class="px-3 py-1.5 text-neutral-400">{r.meta[col] ?? ''}</td>
+							<td class="px-3 py-1.5" style="color: var(--text-secondary);">{r.meta[col] ?? ''}</td>
 						{/each}
 						<td class="px-3 py-1.5 text-right tabular-nums">{r.UTS.toFixed(1)}</td>
 						<td class="px-3 py-1.5 text-right tabular-nums">{r.E.toFixed(0)}</td>
@@ -88,7 +111,8 @@
 	{#if rows.length > limit}
 		<button
 			onclick={() => (limit += 24)}
-			class="mt-2 text-xs text-plasma-400 hover:text-plasma-300"
+			class="mt-2 text-xs"
+			style="color: var(--color-plasma-400);"
 		>
 			Show {Math.min(24, rows.length - limit)} more →
 		</button>

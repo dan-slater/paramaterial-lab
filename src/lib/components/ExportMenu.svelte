@@ -133,21 +133,29 @@
 <head>
 <meta charset="utf-8" />
 <title>${escapeHtml(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
 <style>
-  :root { color-scheme: light; }
-  body { font: 14px/1.5 -apple-system, system-ui, sans-serif; background: #fafafa; color: #111; margin: 0; padding: 24px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .meta { color: #666; font-size: 12px; margin-bottom: 24px; }
-  .block { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 16px; position: relative; }
-  .n { position: absolute; top: 8px; right: 12px; font-size: 11px; color: #999; }
+  :root { color-scheme: light; --serif: 'Source Serif 4', Georgia, serif; --sans: 'Inter', system-ui, sans-serif; }
+  body { font-family: var(--serif); font-size: 11pt; line-height: 1.55; background: #faf8f3; color: #1b1a15; margin: 0; padding: 28px; }
+  h1 { font-family: var(--serif); font-size: 22pt; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .meta { font-family: var(--sans); color: #4e4a3d; font-size: 10pt; margin-bottom: 22px; border-bottom: 1px solid #d9d4c6; padding-bottom: 12pt; }
+  .block { background: #fffdf7; border: 1px solid #d9d4c6; border-radius: 6px; padding: 16px 18px; margin-bottom: 16px; position: relative; }
+  .n { position: absolute; top: 10px; right: 14px; font-family: var(--sans); font-size: 9pt; color: #807a68; letter-spacing: 0.14em; text-transform: uppercase; }
   article { all: unset; display: block; }
-  table { border-collapse: collapse; width: 100%; font-size: 12px; }
-  th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: left; }
-  th { background: #f3f3f3; }
-  h2 { font-size: 16px; margin: 0 0 4px; }
+  table { font-family: var(--sans); border-collapse: collapse; width: 100%; font-size: 10pt; }
+  th, td { border: 1px solid #d9d4c6; padding: 5px 9px; text-align: left; }
+  th { background: #f3efe4; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 9pt; }
+  h2 { font-family: var(--serif); font-size: 14pt; margin: 2px 0 4px; letter-spacing: -0.005em; }
+  .caption-eyebrow { font-family: var(--sans); font-size: 9pt; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #564f42; }
   p { margin: 4px 0; }
-  img { display: block; }
-  @media print { body { background: #fff; } .block { break-inside: avoid; border-color: #ccc; } }
+  img { display: block; max-width: 100%; }
+  @page { size: A4; margin: 18mm 16mm; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .block { break-inside: avoid; page-break-inside: avoid; border-color: #bbb; widows: 3; orphans: 3; }
+  }
 </style>
 </head>
 <body>
@@ -488,7 +496,8 @@ ${body}
 	<button
 		type="button"
 		onclick={() => (open = !open)}
-		class="rounded-md border border-neutral-800 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
+		class="rounded-md border px-2 py-1 text-xs transition-colors"
+		style="border-color: var(--border-default); color: var(--text-secondary);"
 		aria-expanded={open}
 		aria-haspopup="menu"
 	>
@@ -505,13 +514,15 @@ ${body}
 		></button>
 		<div
 			role="menu"
-			class="absolute right-0 z-40 mt-1 w-56 overflow-hidden rounded-md border border-neutral-800 bg-neutral-900 text-xs shadow-xl"
+			class="absolute right-0 z-40 mt-1 w-56 overflow-hidden rounded-md border text-xs"
+			style="background: var(--surface-card); border-color: var(--border-strong); box-shadow: var(--shadow-md);"
 		>
 			<button
 				type="button"
 				role="menuitem"
 				onclick={downloadJSON}
-				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
+				class="block w-full px-3 py-2 text-left transition-colors"
+				style="color: var(--text-primary);"
 			>
 				Download JSON
 			</button>
@@ -519,7 +530,8 @@ ${body}
 				type="button"
 				role="menuitem"
 				onclick={downloadMarkdown}
-				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
+				class="block w-full px-3 py-2 text-left transition-colors"
+				style="color: var(--text-primary);"
 			>
 				Download Markdown
 			</button>
@@ -527,7 +539,8 @@ ${body}
 				type="button"
 				role="menuitem"
 				onclick={triggerImport}
-				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
+				class="block w-full px-3 py-2 text-left transition-colors"
+				style="color: var(--text-primary);"
 			>
 				Import JSON…
 			</button>
@@ -535,7 +548,8 @@ ${body}
 				type="button"
 				role="menuitem"
 				onclick={printReady}
-				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
+				class="block w-full px-3 py-2 text-left transition-colors"
+				style="color: var(--text-primary);"
 			>
 				Print-ready HTML
 			</button>
@@ -543,16 +557,17 @@ ${body}
 				type="button"
 				role="menuitem"
 				onclick={copyLink}
-				class="block w-full px-3 py-2 text-left text-neutral-200 hover:bg-neutral-800"
+				class="block w-full px-3 py-2 text-left transition-colors"
+				style="color: var(--text-primary);"
 			>
 				Copy link
 			</button>
-			<div class="border-t border-neutral-800"></div>
+			<div style="border-top: 1px solid var(--border-default);"></div>
 			<button
 				type="button"
 				role="menuitem"
 				onclick={clearAllAction}
-				class="block w-full px-3 py-2 text-left text-red-300 hover:bg-red-900/40"
+				class="block w-full px-3 py-2 text-left text-red-400 transition-colors"
 			>
 				Clear all
 			</button>
@@ -571,7 +586,8 @@ ${body}
 		<div
 			role="status"
 			aria-live="polite"
-			class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md border border-neutral-700 bg-neutral-900/95 px-3 py-1.5 text-xs text-neutral-100 shadow-lg"
+			class="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-md border px-3 py-1.5 text-xs"
+			style="background: var(--surface-card); border-color: var(--border-strong); color: var(--text-primary); box-shadow: var(--shadow-md);"
 		>
 			{toast}
 		</div>

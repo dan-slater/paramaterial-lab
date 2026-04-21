@@ -110,18 +110,26 @@
 
 <div class="flex items-start justify-between gap-4">
 	<div>
-		<p class="text-xs uppercase tracking-wider text-neutral-500">Representative curves</p>
-		<h2 class="mt-0.5 text-xl font-semibold tracking-tight">Mean per group, shown as single lines</h2>
-		<p class="mt-1 text-sm text-neutral-400">
-			Grouped by <span class="text-plasma-400">{groupBy || '—'}</span> · {reps.length} groups.
+		<p class="caption-eyebrow">Representative curves</p>
+		<h2
+			class="block-title mt-1 text-2xl font-semibold"
+			style="color: var(--text-primary); letter-spacing: -0.01em;"
+		>
+			Mean per group, shown as single lines
+		</h2>
+		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
+			Grouped by
+			<span style="color: var(--color-plasma-400); font-style: normal;">{groupBy || '—'}</span>
+			· {reps.length} groups.
 		</p>
 	</div>
 	{#if infoColumns.length}
 		<label class="flex shrink-0 items-center gap-2 text-xs">
-			<span class="text-neutral-500">Group by</span>
+			<span style="color: var(--text-muted);">Group by</span>
 			<select
 				bind:value={groupBy}
-				class="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs"
+				class="rounded-md border px-2 py-1 text-xs"
+				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 			>
 				{#each infoColumns.filter((c) => c !== 'test_id') as col}
 					<option value={col}>{col}</option>
@@ -131,12 +139,12 @@
 	{/if}
 </div>
 
-<div class="mt-3 rounded-md border border-neutral-800 bg-neutral-950 p-2">
+<div class="mt-4 rounded-md border p-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
 	<div bind:this={container} class="w-full"></div>
 	{#if !tests.length}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">Load a dataset above.</p>
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 	{:else if !reps.length}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">
 			No groups could be formed from the selected key.
 		</p>
 	{/if}

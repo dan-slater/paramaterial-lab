@@ -9,7 +9,9 @@
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
 	import type { Block } from '$lib/stores/blocks.svelte';
 
+	const THEME_KEY = 'paramaterial:theme:v1';
 	let chatOpen = $state(false);
+	let theme = $state<'dark' | 'light'>('dark');
 
 	// Show an empty-state hint once a dataset is loaded but the user hasn't
 	// added any tool blocks yet.
@@ -18,6 +20,22 @@
 		blocksStore.list.length === 1 && blocksStore.list[0].type === 'dataset-picker'
 	);
 	const showEmptyHint = $derived(hasDataset && onlyDatasetPicker);
+
+	function applyTheme(t: 'dark' | 'light') {
+		theme = t;
+		if (typeof document !== 'undefined') {
+			document.documentElement.setAttribute('data-theme', t);
+		}
+		try {
+			localStorage.setItem(THEME_KEY, t);
+		} catch {
+			/* ignore */
+		}
+	}
+
+	function toggleTheme() {
+		applyTheme(theme === 'dark' ? 'light' : 'dark');
+	}
 
 	// If the URL carries ?state=..., decode it into the blocks store once on mount
 	// and rehydrate the referenced dataset, then strip the query param so the
@@ -67,6 +85,10 @@
 	}
 
 	onMount(() => {
+		// Sync local state with the early-applied document attribute.
+		const attr = document.documentElement.getAttribute('data-theme');
+		theme = attr === 'light' ? 'light' : 'dark';
+
 		consumeShareableState();
 		const mq = window.matchMedia('(min-width: 1024px)');
 
@@ -125,13 +147,22 @@
 </script>
 
 <header
-	class="flex shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-900/70 px-4 py-2.5 backdrop-blur"
+	class="flex shrink-0 items-center justify-between border-b px-4 py-2.5 backdrop-blur"
+	style="background: color-mix(in srgb, var(--surface-raised) 88%, transparent); border-color: var(--border-default);"
 >
-	<a href="/" class="flex items-center gap-2 text-base font-semibold tracking-tight">
-		<span class="inline-block h-5 w-5 rounded bg-gradient-to-br from-plasma-400 to-plasma-700"></span>
-		paramaterial
+	<a
+		href="/"
+		class="flex items-center gap-2 text-base font-semibold tracking-tight"
+		style="color: var(--text-primary);"
+	>
+		<span
+			class="inline-block h-5 w-5 rounded"
+			style="background: linear-gradient(135deg, var(--color-plasma-400), var(--color-plasma-700));"
+			aria-hidden="true"
+		></span>
+		<span class="font-serif" style="letter-spacing: -0.01em;">paramaterial</span>
 	</a>
-	<div class="flex items-center gap-2 text-xs text-neutral-500">
+	<div class="flex items-center gap-2 text-xs" style="color: var(--text-muted);">
 		{#if datasetStore.current}
 			<span class="hidden sm:inline">
 				{datasetStore.current.name} · {datasetStore.current.tests.length} tests
@@ -143,8 +174,51 @@
 		<ExportMenu />
 		<button
 			type="button"
+			onclick={toggleTheme}
+			aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+			aria-pressed={theme === 'light'}
+			title={theme === 'dark' ? 'Light (paper) theme' : 'Dark theme'}
+			class="rounded-md border px-2 py-1 text-xs transition-colors"
+			style="border-color: var(--border-default); color: var(--text-secondary); background: transparent;"
+		>
+			{#if theme === 'dark'}
+				<!-- sun -->
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="h-3.5 w-3.5"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="4"></circle>
+					<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+				</svg>
+			{:else}
+				<!-- moon -->
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="h-3.5 w-3.5"
+					aria-hidden="true"
+				>
+					<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+				</svg>
+			{/if}
+		</button>
+		<button
+			type="button"
 			onclick={() => (chatOpen = !chatOpen)}
-			class="rounded-md border border-neutral-800 px-2 py-1 text-xs hover:bg-neutral-800 lg:hidden"
+			class="rounded-md border px-2 py-1 text-xs transition-colors lg:hidden"
+			style="border-color: var(--border-default); color: var(--text-secondary);"
 			aria-pressed={chatOpen}
 		>
 			{chatOpen ? 'Hide chat' : 'Chat'}
@@ -153,12 +227,19 @@
 </header>
 
 {#if datasetStore.needsReupload}
-	<div class="flex items-center justify-between gap-3 border-b border-amber-900/50 bg-amber-950/40 px-4 py-2 text-xs text-amber-200">
-		<span>Your previous dataset was an uploaded CSV — raw data isn't saved across reloads. Re-upload it in the first block to continue.</span>
+	<div
+		class="flex items-center justify-between gap-3 border-b px-4 py-2 text-xs"
+		style="background: rgb(120 60 10 / 0.22); border-color: rgb(160 100 30 / 0.4); color: #f2c88c;"
+	>
+		<span
+			>Your previous dataset was an uploaded CSV — raw data isn't saved across reloads. Re-upload it
+			in the first block to continue.</span
+		>
 		<button
 			type="button"
 			onclick={() => datasetStore.dismissReuploadNotice()}
-			class="rounded border border-amber-800/60 px-2 py-0.5 text-[11px] hover:bg-amber-900/40"
+			class="rounded border px-2 py-0.5 text-[11px]"
+			style="border-color: rgb(160 100 30 / 0.55);"
 		>
 			Dismiss
 		</button>
@@ -167,8 +248,32 @@
 
 <div class="flex min-h-0 flex-1 overflow-hidden">
 	<main class="relative flex min-h-0 flex-1 flex-col">
-		<div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-			<div class="mx-auto flex max-w-4xl flex-col gap-5 pb-32">
+		<div class="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+			<div class="mx-auto flex max-w-4xl flex-col gap-6 pb-32">
+				<div class="report-masthead">
+					<p class="caption-eyebrow">Laboratory report</p>
+					<h1
+						class="report-title mt-1 text-3xl font-semibold"
+						style="color: var(--text-primary); font-family: var(--font-serif); letter-spacing: -0.015em;"
+					>
+						{datasetStore.current?.name ?? 'An interactive materials report'}
+					</h1>
+					<p
+						class="mt-2 text-sm italic"
+						style="color: var(--text-secondary); font-family: var(--font-serif);"
+					>
+						{#if datasetStore.current}
+							{datasetStore.current.tests.length} tests · compiled in-browser
+						{:else}
+							Pick a dataset to begin. Every block below is a figure, table, or note in a live
+							engineering notebook.
+						{/if}
+					</p>
+					<hr
+						class="mt-4 border-0"
+						style="height: 1px; background: linear-gradient(to right, var(--border-strong), transparent);"
+					/>
+				</div>
 				{#each blocksStore.list as block, i (block.id)}
 					<div id={`block-${block.id}`}>
 						<BlockRenderer {block} index={i} />
@@ -176,18 +281,22 @@
 				{/each}
 				{#if showEmptyHint}
 					<div
-						class="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/40 p-5 text-center"
+						class="rounded-lg border border-dashed p-6 text-center"
+						style="border-color: var(--border-default); background: color-mix(in srgb, var(--surface-card) 70%, transparent);"
 					>
-						<p class="text-sm text-neutral-400">
+						<p class="text-sm" style="color: var(--text-secondary);">
 							Pick a tool below, or ask the assistant <span aria-hidden="true">→</span>
 						</p>
-						<p class="mt-1 text-xs text-neutral-600">
+						<p class="mt-1 text-xs italic" style="color: var(--text-muted); font-family: var(--font-serif);">
 							Try "plot stress strain" or tap a tool in the palette.
 						</p>
 					</div>
 				{/if}
-				<p class="pt-2 text-center text-xs text-neutral-600">
-					End of report · add a block below or ask the assistant
+				<p
+					class="pt-2 text-center text-xs italic"
+					style="color: var(--text-muted); font-family: var(--font-serif);"
+				>
+					— end of report —
 				</p>
 			</div>
 		</div>
@@ -200,8 +309,9 @@
 	</main>
 
 	<aside
-		class="fixed inset-y-0 right-0 z-20 w-full max-w-sm transform bg-neutral-950 shadow-xl transition-transform lg:static lg:w-96 lg:shadow-none
+		class="fixed inset-y-0 right-0 z-20 w-full max-w-sm transform shadow-xl transition-transform lg:static lg:w-96 lg:shadow-none
 		{chatOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}"
+		style="background: var(--surface-page);"
 	>
 		<ChatPane />
 	</aside>

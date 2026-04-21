@@ -103,18 +103,22 @@
 
 <div class="flex items-start justify-between gap-4">
 	<div>
-		<p class="text-xs uppercase tracking-wider text-neutral-500">Parameter scatter</p>
-		<h2 class="mt-0.5 text-xl font-semibold tracking-tight">
+		<p class="caption-eyebrow">Parameter scatter</p>
+		<h2
+			class="block-title mt-1 text-2xl font-semibold"
+			style="color: var(--text-primary); letter-spacing: -0.01em;"
+		>
 			{yProperty} vs {xKey || '—'}
 		</h2>
-		<p class="mt-1 text-sm text-neutral-400">{points.length} points.</p>
+		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">{points.length} points.</p>
 	</div>
 	<div class="flex shrink-0 items-center gap-2 text-xs">
 		<label class="flex items-center gap-1">
-			<span class="text-neutral-500">Y</span>
+			<span style="color: var(--text-muted);">Y</span>
 			<select
 				bind:value={yProperty}
-				class="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs"
+				class="rounded-md border px-2 py-1 text-xs"
+				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 			>
 				<option value="UTS">UTS</option>
 				<option value="E">E</option>
@@ -123,10 +127,11 @@
 		</label>
 		{#if infoColumns.length}
 			<label class="flex items-center gap-1">
-				<span class="text-neutral-500">X</span>
+				<span style="color: var(--text-muted);">X</span>
 				<select
 					bind:value={xKey}
-					class="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs"
+					class="rounded-md border px-2 py-1 text-xs"
+					style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 				>
 					{#each infoColumns.filter((c) => c !== 'test_id') as col}
 						<option value={col}>{col}</option>
@@ -137,12 +142,12 @@
 	</div>
 </div>
 
-<div class="mt-3 rounded-md border border-neutral-800 bg-neutral-950 p-2">
+<div class="mt-4 rounded-md border p-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
 	<div bind:this={container} class="w-full"></div>
 	{#if !tests.length}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">Load a dataset above.</p>
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 	{:else if !points.length}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">
 			No numeric values for the chosen X key.
 		</p>
 	{/if}

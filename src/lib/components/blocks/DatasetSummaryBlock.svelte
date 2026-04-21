@@ -106,37 +106,40 @@
 </script>
 
 <div>
-	<p class="text-xs uppercase tracking-wider text-neutral-500">Dataset summary</p>
-	<h2 class="mt-0.5 text-xl font-semibold tracking-tight">
+	<p class="caption-eyebrow">Dataset summary</p>
+	<h2
+		class="block-title mt-1 text-2xl font-semibold"
+		style="color: var(--text-primary); letter-spacing: -0.01em;"
+	>
 		{ds?.name ?? 'Loaded dataset'}
 	</h2>
 	{#if ds?.description}
-		<p class="mt-1 text-sm text-neutral-400">{ds.description}</p>
+		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">{ds.description}</p>
 	{/if}
 </div>
 
 {#if !tests.length}
-	<p class="mt-3 text-sm text-neutral-500">Load a dataset above.</p>
+	<p class="mt-3 text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 {:else}
-	<div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 p-3">
-			<p class="text-[11px] uppercase tracking-wider text-neutral-500">Tests</p>
-			<p class="mt-1 text-lg font-semibold tabular-nums">{tests.length}</p>
+	<div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+		<div class="rounded-md border p-3" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">Tests</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{tests.length}</p>
 		</div>
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 p-3">
-			<p class="text-[11px] uppercase tracking-wider text-neutral-500">Info columns</p>
-			<p class="mt-1 text-lg font-semibold tabular-nums">{infoColumns.length}</p>
+		<div class="rounded-md border p-3" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">Info columns</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{infoColumns.length}</p>
 		</div>
 		{#if ranges}
-			<div class="rounded-md border border-neutral-800 bg-neutral-950 p-3">
-				<p class="text-[11px] uppercase tracking-wider text-neutral-500">Strain range</p>
-				<p class="mt-1 text-sm font-semibold tabular-nums">
+			<div class="rounded-md border p-3" style="background: var(--surface-sunk); border-color: var(--border-default);">
+				<p class="caption-eyebrow" style="font-size: 10px;">Strain range</p>
+				<p class="mt-1 text-sm font-semibold tabular-nums" style="color: var(--text-primary);">
 					{fmt(ranges.minStrain)} → {fmt(ranges.maxStrain)}
 				</p>
 			</div>
-			<div class="rounded-md border border-neutral-800 bg-neutral-950 p-3">
-				<p class="text-[11px] uppercase tracking-wider text-neutral-500">Stress range (MPa)</p>
-				<p class="mt-1 text-sm font-semibold tabular-nums">
+			<div class="rounded-md border p-3" style="background: var(--surface-sunk); border-color: var(--border-default);">
+				<p class="caption-eyebrow" style="font-size: 10px;">Stress range (MPa)</p>
+				<p class="mt-1 text-sm font-semibold tabular-nums" style="color: var(--text-primary);">
 					{fmt(ranges.minStress)} → {fmt(ranges.maxStress)}
 				</p>
 			</div>
@@ -144,31 +147,31 @@
 	</div>
 
 	{#if columnSummaries.length}
-		<div class="mt-4 overflow-x-auto rounded-md border border-neutral-800">
+		<div class="mt-4 overflow-x-auto rounded-md border" style="border-color: var(--border-default);">
 			<table class="w-full text-sm">
-				<thead class="bg-neutral-900 text-xs uppercase tracking-wider text-neutral-400">
+				<thead style="background: var(--surface-chip);">
 					<tr>
-						<th class="px-3 py-2 text-left">Column</th>
-						<th class="px-3 py-2 text-right">Unique</th>
-						<th class="px-3 py-2 text-right">Missing</th>
-						<th class="px-3 py-2 text-right">Min</th>
-						<th class="px-3 py-2 text-right">Max</th>
-						<th class="px-3 py-2 text-right">Mean</th>
-						<th class="px-3 py-2 text-right">Std</th>
-						<th class="px-3 py-2 text-left">Top values</th>
+						<th class="px-3 py-2 text-left caption-eyebrow" style="font-size: 10px;">Column</th>
+						<th class="px-3 py-2 text-right caption-eyebrow" style="font-size: 10px;">Unique</th>
+						<th class="px-3 py-2 text-right caption-eyebrow" style="font-size: 10px;">Missing</th>
+						<th class="px-3 py-2 text-right caption-eyebrow" style="font-size: 10px;">Min</th>
+						<th class="px-3 py-2 text-right caption-eyebrow" style="font-size: 10px;">Max</th>
+						<th class="px-3 py-2 text-right caption-eyebrow" style="font-size: 10px;">Mean</th>
+						<th class="px-3 py-2 text-right caption-eyebrow" style="font-size: 10px;">Std</th>
+						<th class="px-3 py-2 text-left caption-eyebrow" style="font-size: 10px;">Top values</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each columnSummaries as c (c.column)}
-						<tr class="border-t border-neutral-800/70 text-neutral-300 align-top">
+						<tr class="border-t align-top" style="border-color: var(--border-default); color: var(--text-primary);">
 							<td class="px-3 py-1.5 font-mono text-xs">
 								{c.column}
 								{#if c.numeric}
-									<span class="ml-1 text-[10px] text-neutral-500">num</span>
+									<span class="ml-1 text-[10px]" style="color: var(--text-muted);">num</span>
 								{/if}
 							</td>
 							<td class="px-3 py-1.5 text-right tabular-nums">{c.unique}</td>
-							<td class="px-3 py-1.5 text-right tabular-nums text-neutral-500">{c.missing}</td>
+							<td class="px-3 py-1.5 text-right tabular-nums" style="color: var(--text-muted);">{c.missing}</td>
 							<td class="px-3 py-1.5 text-right tabular-nums">{c.numeric ? fmt(c.min) : '—'}</td>
 							<td class="px-3 py-1.5 text-right tabular-nums">{c.numeric ? fmt(c.max) : '—'}</td>
 							<td class="px-3 py-1.5 text-right tabular-nums">{c.numeric ? fmt(c.mean) : '—'}</td>
@@ -177,10 +180,11 @@
 								<div class="flex flex-wrap gap-1">
 									{#each c.topValues as tv (tv.value)}
 										<span
-											class="rounded border border-neutral-800 bg-neutral-900 px-1.5 py-0.5 text-[11px] text-neutral-400"
+											class="rounded border px-1.5 py-0.5 text-[11px]"
+											style="background: var(--surface-chip); border-color: var(--border-default); color: var(--text-secondary);"
 										>
 											{tv.value}
-											<span class="text-neutral-600">· {tv.count}</span>
+											<span style="color: var(--text-muted);">· {tv.count}</span>
 										</span>
 									{/each}
 								</div>
@@ -193,8 +197,8 @@
 	{/if}
 
 	{#if ranges}
-		<p class="mt-2 text-[11px] text-neutral-500">
-			Total samples across all curves: <span class="tabular-nums text-neutral-400">{ranges.totalSamples.toLocaleString()}</span>.
+		<p class="mt-2 text-[11px]" style="color: var(--text-muted);">
+			Total samples across all curves: <span class="tabular-nums" style="color: var(--text-secondary);">{ranges.totalSamples.toLocaleString()}</span>.
 		</p>
 	{/if}
 {/if}

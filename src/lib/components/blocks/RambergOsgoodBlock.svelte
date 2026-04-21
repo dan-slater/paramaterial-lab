@@ -116,18 +116,24 @@
 
 <div class="flex items-start justify-between gap-4">
 	<div>
-		<p class="text-xs uppercase tracking-wider text-neutral-500">Ramberg–Osgood</p>
-		<h2 class="mt-0.5 text-xl font-semibold tracking-tight">Power-law fit σ = C·ε<sup>n</sup></h2>
-		<p class="mt-1 text-sm text-neutral-400">
+		<p class="caption-eyebrow">Ramberg–Osgood</p>
+		<h2
+			class="block-title mt-1 text-2xl font-semibold"
+			style="color: var(--text-primary); letter-spacing: -0.01em;"
+		>
+			Power-law fit σ = C·ε<sup>n</sup>
+		</h2>
+		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
 			Log-log OLS on plastic region (0.2% proof → UTS). {fits.length} tests fit.
 		</p>
 	</div>
 	{#if tests.length}
 		<label class="flex shrink-0 items-center gap-2 text-xs">
-			<span class="text-neutral-500">Preview</span>
+			<span style="color: var(--text-muted);">Preview</span>
 			<select
 				bind:value={previewTestId}
-				class="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs font-mono"
+				class="rounded-md border px-2 py-1 text-xs font-mono"
+				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 			>
 				{#each tests as t (t.test_id)}
 					<option value={t.test_id}>{t.test_id}</option>
@@ -138,49 +144,49 @@
 </div>
 
 {#if previewFit && Number.isFinite(previewFit.n)}
-	<div class="mt-3 grid gap-3 sm:grid-cols-3">
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">C</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{previewFit.C.toFixed(2)}</p>
+	<div class="mt-4 grid gap-3 sm:grid-cols-3">
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">C</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{previewFit.C.toFixed(2)}</p>
 		</div>
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">n</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{previewFit.n.toFixed(4)}</p>
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">n</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{previewFit.n.toFixed(4)}</p>
 		</div>
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">R²</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{previewFit.r2.toFixed(4)}</p>
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">R²</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{previewFit.r2.toFixed(4)}</p>
 		</div>
 	</div>
 {/if}
 
-<div class="mt-3 rounded-md border border-neutral-800 bg-neutral-950 p-2">
+<div class="mt-4 rounded-md border p-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
 	<div bind:this={container} class="w-full"></div>
 	{#if !tests.length}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">Load a dataset above.</p>
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 	{:else if !previewFit || !Number.isFinite(previewFit.n)}
 		<p class="px-2 py-6 text-center text-sm text-red-400">Could not fit this test (insufficient plastic-region points).</p>
 	{/if}
 </div>
 
 {#if fits.length}
-	<div class="mt-3 max-h-72 overflow-auto rounded-md border border-neutral-800">
+	<div class="mt-4 max-h-72 overflow-auto rounded-md border" style="border-color: var(--border-default);">
 		<table class="w-full text-xs">
-			<thead class="sticky top-0 bg-neutral-900 text-neutral-400">
+			<thead class="sticky top-0" style="background: var(--surface-chip); color: var(--text-secondary);">
 				<tr>
-					<th class="px-3 py-1.5 text-left font-medium">test_id</th>
-					<th class="px-3 py-1.5 text-right font-medium">C</th>
-					<th class="px-3 py-1.5 text-right font-medium">n</th>
-					<th class="px-3 py-1.5 text-right font-medium">R²</th>
+					<th class="px-3 py-1.5 text-left caption-eyebrow" style="font-size: 10px;">test_id</th>
+					<th class="px-3 py-1.5 text-right caption-eyebrow" style="font-size: 10px;">C</th>
+					<th class="px-3 py-1.5 text-right caption-eyebrow" style="font-size: 10px;">n</th>
+					<th class="px-3 py-1.5 text-right caption-eyebrow" style="font-size: 10px;">R²</th>
 				</tr>
 			</thead>
 			<tbody class="tabular-nums">
 				{#each fits as row (row.testId)}
-					<tr class="border-t border-neutral-800">
-						<td class="px-3 py-1 font-mono text-neutral-300">{row.testId}</td>
-						<td class="px-3 py-1 text-right">{Number.isFinite(row.fit.C) ? row.fit.C.toFixed(2) : '—'}</td>
-						<td class="px-3 py-1 text-right">{Number.isFinite(row.fit.n) ? row.fit.n.toFixed(4) : '—'}</td>
-						<td class="px-3 py-1 text-right">{Number.isFinite(row.fit.r2) ? row.fit.r2.toFixed(4) : '—'}</td>
+					<tr class="border-t" style="border-color: var(--border-default);">
+						<td class="px-3 py-1 font-mono" style="color: var(--text-secondary);">{row.testId}</td>
+						<td class="px-3 py-1 text-right" style="color: var(--text-primary);">{Number.isFinite(row.fit.C) ? row.fit.C.toFixed(2) : '—'}</td>
+						<td class="px-3 py-1 text-right" style="color: var(--text-primary);">{Number.isFinite(row.fit.n) ? row.fit.n.toFixed(4) : '—'}</td>
+						<td class="px-3 py-1 text-right" style="color: var(--text-primary);">{Number.isFinite(row.fit.r2) ? row.fit.r2.toFixed(4) : '—'}</td>
 					</tr>
 				{/each}
 			</tbody>

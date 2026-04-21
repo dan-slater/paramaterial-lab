@@ -117,67 +117,74 @@
 
 <div class="flex items-start justify-between gap-4">
 	<div>
-		<p class="text-xs uppercase tracking-wider text-neutral-500">Zener–Hollomon</p>
-		<h2 class="mt-0.5 text-xl font-semibold tracking-tight">ln σ = a · ln Z + b</h2>
-		<p class="mt-1 text-sm text-neutral-400">
+		<p class="caption-eyebrow">Zener–Hollomon</p>
+		<h2
+			class="block-title mt-1 text-2xl font-semibold"
+			style="color: var(--text-primary); letter-spacing: -0.01em;"
+		>
+			ln σ = a · ln Z + b
+		</h2>
+		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
 			Z = ε̇ · exp(Q / (R·T<sub>K</sub>)), flow stress from curve at ε = {flowStrain}.
 		</p>
 	</div>
 	<div class="flex shrink-0 flex-wrap items-center gap-2 text-xs">
 		<label class="flex items-center gap-1">
-			<span class="text-neutral-500">Q (kJ/mol)</span>
+			<span style="color: var(--text-muted);">Q (kJ/mol)</span>
 			<input
 				type="number"
 				bind:value={Q_kJmol}
 				step="5"
-				class="w-20 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs"
+				class="w-20 rounded-md border px-2 py-1 text-xs"
+				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 			/>
 		</label>
 		<label class="flex items-center gap-1">
-			<span class="text-neutral-500">ε</span>
+			<span style="color: var(--text-muted);">ε</span>
 			<input
 				type="number"
 				bind:value={flowStrain}
 				step="0.05"
 				min="0"
-				class="w-20 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs"
+				class="w-20 rounded-md border px-2 py-1 text-xs"
+				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 			/>
 		</label>
 	</div>
 </div>
 
 {#if zh}
-	<div class="mt-3 grid gap-3 sm:grid-cols-3">
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">slope a</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{zh.slope.toFixed(4)}</p>
+	<div class="mt-4 grid gap-3 sm:grid-cols-3">
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">slope a</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{zh.slope.toFixed(4)}</p>
 		</div>
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">intercept b</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{zh.intercept.toFixed(4)}</p>
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">intercept b</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{zh.intercept.toFixed(4)}</p>
 		</div>
-		<div class="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
-			<p class="text-xs text-neutral-500">R²</p>
-			<p class="text-lg font-semibold tabular-nums text-neutral-100">{zh.r2.toFixed(4)}</p>
+		<div class="rounded-md border px-3 py-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
+			<p class="caption-eyebrow" style="font-size: 10px;">R²</p>
+			<p class="mt-1 text-lg font-semibold tabular-nums" style="color: var(--text-primary);">{zh.r2.toFixed(4)}</p>
 		</div>
 	</div>
-	<p class="mt-2 text-xs text-neutral-400">
-		ln σ = <span class="text-plasma-400">{zh.slope.toFixed(4)}</span> · ln Z +
-		<span class="text-plasma-400">{zh.intercept.toFixed(4)}</span>
-		<span class="text-neutral-500"> ({zh.points.length} tests)</span>
+	<p class="mt-2 text-xs" style="color: var(--text-secondary);">
+		ln σ = <span style="color: var(--color-plasma-400);">{zh.slope.toFixed(4)}</span> · ln Z +
+		<span style="color: var(--color-plasma-400);">{zh.intercept.toFixed(4)}</span>
+		<span style="color: var(--text-muted);"> ({zh.points.length} tests)</span>
 	</p>
 {/if}
 
-<div class="mt-3 rounded-md border border-neutral-800 bg-neutral-950 p-2">
+<div class="mt-4 rounded-md border p-2" style="background: var(--surface-sunk); border-color: var(--border-default);">
 	<div bind:this={container} class="w-full"></div>
 	{#if !tests.length}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">Load a dataset above.</p>
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 	{:else if !hasMeta}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">
-			This dataset lacks <span class="font-mono">rate</span> or <span class="font-mono">temperature</span> metadata — Zener–Hollomon needs both.
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">
+			This dataset lacks <span class="font-mono not-italic">rate</span> or <span class="font-mono not-italic">temperature</span> metadata — Zener–Hollomon needs both.
 		</p>
 	{:else if !zh}
-		<p class="px-2 py-6 text-center text-sm text-neutral-500">
+		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">
 			No tests reach the chosen flow-strain ε = {flowStrain}. Try lowering it.
 		</p>
 	{/if}
