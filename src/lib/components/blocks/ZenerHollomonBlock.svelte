@@ -3,6 +3,7 @@
 	import uPlot from 'uplot';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import { computeZH } from '$lib/processing';
+	import { getPlotTheme } from '$lib/plotTheme';
 
 	interface Props {
 		id: string;
@@ -68,13 +69,14 @@
 		for (const v of lineY) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }
 		const yPad = (yMax - yMin) * 0.08 || 0.1;
 
+		const t = getPlotTheme();
 		const opts: uPlot.Options = {
 			width: container.clientWidth,
 			height: 360,
 			scales: { x: { time: false }, y: { range: [yMin - yPad, yMax + yPad] } },
 			axes: [
-				{ label: 'ln Z', stroke: '#9ca3af', grid: { stroke: '#27272a', width: 1 }, ticks: { stroke: '#3f3f46' } },
-				{ label: 'ln σ', stroke: '#9ca3af', grid: { stroke: '#27272a', width: 1 }, ticks: { stroke: '#3f3f46' } }
+				{ label: 'ln Z', stroke: t.axis, grid: { stroke: t.grid, width: 1 }, ticks: { stroke: t.tick } },
+				{ label: 'ln σ', stroke: t.axis, grid: { stroke: t.grid, width: 1 }, ticks: { stroke: t.tick } }
 			],
 			legend: { show: false },
 			series: [

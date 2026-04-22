@@ -51,28 +51,26 @@
 </script>
 
 {#if datasetStore.current}
-	<div class="flex items-start justify-between gap-4">
-		<div>
-			<p class="caption-eyebrow">Dataset</p>
-			<h2
-				class="block-title mt-1 text-2xl font-semibold"
-				style="color: var(--text-primary); letter-spacing: -0.01em;"
-			>
-				{datasetStore.current.name}
-			</h2>
-			<p
-				class="caption-note mt-1 text-sm"
-				style="color: var(--text-secondary);"
-			>
-				{datasetStore.current.tests.length} tests · {datasetStore.current.description}
-			</p>
-		</div>
+	<div class="pr-32">
+		<p class="caption-eyebrow">Dataset</p>
+		<h2
+			class="block-title mt-1 text-2xl font-semibold"
+			style="color: var(--text-primary); letter-spacing: -0.01em;"
+		>
+			{datasetStore.current.name}
+		</h2>
+		<p
+			class="caption-note mt-1 text-sm"
+			style="color: var(--text-secondary);"
+		>
+			{datasetStore.current.tests.length} tests · {datasetStore.current.description}
+		</p>
 		<button
 			onclick={() => datasetStore.clear()}
-			class="shrink-0 rounded-md border px-3 py-1.5 text-xs transition-colors"
+			class="mt-3 rounded-md border px-3 py-1.5 text-xs transition-colors"
 			style="border-color: var(--border-default); color: var(--text-secondary);"
 		>
-			Change
+			Change dataset
 		</button>
 	</div>
 {:else}

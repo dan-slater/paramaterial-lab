@@ -16,6 +16,8 @@
 	let hiddenGroups = $state<Set<string>>(new Set());
 	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
 	const tests = $derived(datasetStore.current?.tests ?? []);
+	const xLabel = $derived(datasetStore.current?.x_label ?? 'Strain');
+	const yLabel = $derived(datasetStore.current?.y_label ?? 'Stress (MPa)');
 
 	$effect(() => {
 		if (!infoColumns.length) return;
@@ -163,6 +165,8 @@
 			offsetStrain={0.002}
 			{offsetE}
 			{hiddenGroups}
+			{xLabel}
+			{yLabel}
 		/>
 	</div>
 	<p class="mt-2 text-[11px] italic" style="color: var(--text-muted); font-family: var(--font-serif);">

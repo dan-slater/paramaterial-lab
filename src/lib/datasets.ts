@@ -7,12 +7,17 @@ export interface Test {
 	stress: number[];
 }
 
+export type Domain = 'materials' | 'finance' | 'climate' | 'battery' | 'generic';
+
 export interface Dataset {
 	id: string;
 	name: string;
 	description: string;
 	info_columns: string[];
 	tests: Test[];
+	domain?: Domain;
+	x_label?: string;
+	y_label?: string;
 }
 
 export interface DatasetInfo {
@@ -21,6 +26,7 @@ export interface DatasetInfo {
 	description: string;
 	tests: number;
 	source: string;
+	domain?: Domain;
 }
 
 export const PRESET_DATASETS: DatasetInfo[] = [
@@ -29,7 +35,8 @@ export const PRESET_DATASETS: DatasetInfo[] = [
 		name: 'Basic Usage — Uniaxial Tension',
 		description: 'Room-temp and elevated-temp (20–300°C) uniaxial tension on 9 material lots.',
 		tests: 154,
-		source: 'dan_msc_basic_usage_0.1.0'
+		source: 'dan_msc_basic_usage_0.1.0',
+		domain: 'materials'
 	},
 	{
 		id: 'cs1',
@@ -57,7 +64,32 @@ export const PRESET_DATASETS: DatasetInfo[] = [
 		name: 'CS4 — Plane-Strain Compression',
 		description: 'Hyde PSC tests on TB, 300–400°C, rates 10/30/100 /s.',
 		tests: 40,
-		source: 'dan_msc_cs4_0.1.0'
+		source: 'dan_msc_cs4_0.1.0',
+		domain: 'materials'
+	},
+	{
+		id: 'finance',
+		name: 'Finance — Daily Stock Returns',
+		description: '48 tickers, 8 sectors, 2 years of adjusted closes. Sector-correlated GBM with drawdown events.',
+		tests: 48,
+		source: 'synthetic',
+		domain: 'finance'
+	},
+	{
+		id: 'climate',
+		name: 'Climate — Daily Temperature Records',
+		description: '40 global stations, 3 years of daily mean temperature, mixed hemispheres and climate zones.',
+		tests: 40,
+		source: 'synthetic',
+		domain: 'climate'
+	},
+	{
+		id: 'battery',
+		name: 'Battery — Capacity Fade',
+		description: '50 cells across 4 chemistries × C-rates × operating temps, 800 cycles of discharge capacity.',
+		tests: 50,
+		source: 'synthetic',
+		domain: 'battery'
 	}
 ];
 

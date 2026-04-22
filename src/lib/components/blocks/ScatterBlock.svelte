@@ -3,7 +3,8 @@
 	import uPlot from 'uplot';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
-	import { findUTS, findUplLpl, findProofStress } from '$lib/processing';
+	import { getParameterDefs } from '$lib/analyzers/registry';
+	import { getPlotTheme } from '$lib/plotTheme';
 
 	interface Props {
 		id: string;
@@ -14,36 +15,82 @@
 
 	const tests = $derived(datasetStore.current?.tests ?? []);
 	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
-	let xKey = $state((config.xKey as string) ?? '');
-	let yProperty = $state<'UTS' | 'E' | 'PS'>((config.yProperty as 'UTS' | 'E' | 'PS') ?? 'UTS');
+	const domain = $derived(datasetStore.current?.domain);
+	const params = $derived(getParameterDefs(domain));
 
+	// Both axes can reference either a meta column ("meta:col") or a computed
+	// parameter ("param:key"). We use the prefix to disambiguate.
+	const metaOptions = $derived(
+		infoColumns.filter((c) => c !== 'test_id').map((c) => ({
+			id: `meta:${c}`,
+			label: c,
+			group: 'Metadata'
+		}))
+	);
+	const paramOptions = $derived(
+		params.map((p) => ({
+			id: `param:${p.key}`,
+			label: p.label + (p.unit ? ` (${p.unit})` : ''),
+			group: 'Computed'
+		}))
+	);
+	const allOptions = $derived([...paramOptions, ...metaOptions]);
+
+	let xId = $state((config.xId as string) ?? '');
+	let yId = $state((config.yId as string) ?? '');
+
+	// Sensible defaults per domain: pick first numeric meta for X, first param for Y.
 	$effect(() => {
-		if (!infoColumns.length) return;
-		if (!xKey || !infoColumns.includes(xKey)) {
-			xKey = infoColumns.find((c) => /temp/i.test(c)) ?? infoColumns[0];
+		if (!allOptions.length) return;
+		const valid = new Set(allOptions.map((o) => o.id));
+		if (!xId || !valid.has(xId)) {
+			const tempCol = metaOptions.find((o) => /temp|rate|lat|beta|c_rate/i.test(o.label));
+			xId = tempCol?.id ?? metaOptions[0]?.id ?? allOptions[0].id;
+		}
+		if (!yId || !valid.has(yId)) {
+			yId = paramOptions[0]?.id ?? allOptions[0].id;
 		}
 	});
 
+	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+	$effect(() => {
+		const nextX = xId;
+		const nextY = yId;
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => {
+			blocksStore.update(id, { config: { ...config, xId: nextX, yId: nextY } });
+		}, 200);
+	});
+
+	function resolve(tok: string, t: { meta: Record<string, unknown>; strain: number[]; stress: number[] }): number | null {
+		if (!tok) return null;
+		const [kind, key] = tok.split(':');
+		if (kind === 'meta') {
+			const v = Number(t.meta[key]);
+			return Number.isFinite(v) ? v : null;
+		}
+		if (kind === 'param') {
+			const p = params.find((pp) => pp.key === key);
+			if (!p) return null;
+			return p.extract({ strain: t.strain, stress: t.stress }, t.meta);
+		}
+		return null;
+	}
+
 	const points = $derived.by<Array<{ x: number; y: number }>>(() => {
+		if (!xId || !yId) return [];
 		const out: Array<{ x: number; y: number }> = [];
 		for (const t of tests) {
-			const xv = Number(t.meta[xKey]);
-			if (!Number.isFinite(xv)) continue;
-			try {
-				if (yProperty === 'UTS') {
-					out.push({ x: xv, y: findUTS({ strain: t.strain, stress: t.stress }).UTS });
-				} else if (yProperty === 'E') {
-					out.push({ x: xv, y: findUplLpl({ strain: t.strain, stress: t.stress }).E });
-				} else {
-					const foot = findUplLpl({ strain: t.strain, stress: t.stress });
-					out.push({ x: xv, y: findProofStress({ strain: t.strain, stress: t.stress }, foot.E).proofStress });
-				}
-			} catch {
-				/* skip */
-			}
+			const x = resolve(xId, t);
+			const y = resolve(yId, t);
+			if (x === null || y === null) continue;
+			out.push({ x, y });
 		}
 		return out;
 	});
+
+	const xLabel = $derived(allOptions.find((o) => o.id === xId)?.label ?? '');
+	const yLabel = $derived(allOptions.find((o) => o.id === yId)?.label ?? '');
 
 	let container: HTMLDivElement;
 	let plot: uPlot | null = null;
@@ -52,7 +99,6 @@
 		if (!container || !points.length) return;
 		plot?.destroy();
 
-		// sort by x so we can use a line-capable x-axis; disable lines, show points
 		const sorted = points.slice().sort((a, b) => a.x - b.x);
 		const x = sorted.map((p) => p.x);
 		const y = sorted.map((p) => p.y);
@@ -61,19 +107,20 @@
 		for (const v of y) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }
 		const yPad = (yMax - yMin) * 0.08 || 1;
 
+		const t = getPlotTheme();
 		const opts: uPlot.Options = {
 			width: container.clientWidth,
 			height: 340,
 			scales: { x: { time: false }, y: { range: [yMin - yPad, yMax + yPad] } },
 			axes: [
-				{ label: xKey, stroke: '#9ca3af', grid: { stroke: '#27272a', width: 1 }, ticks: { stroke: '#3f3f46' } },
-				{ label: `${yProperty} (MPa)`, stroke: '#9ca3af', grid: { stroke: '#27272a', width: 1 }, ticks: { stroke: '#3f3f46' } }
+				{ label: xLabel, stroke: t.axis, grid: { stroke: t.grid, width: 1 }, ticks: { stroke: t.tick } },
+				{ label: yLabel, stroke: t.axis, grid: { stroke: t.grid, width: 1 }, ticks: { stroke: t.tick } }
 			],
 			legend: { show: false },
 			series: [
-				{ label: xKey },
+				{ label: xLabel },
 				{
-					label: yProperty,
+					label: yLabel,
 					stroke: '#e879f9',
 					width: 0,
 					points: { show: true, size: 6, stroke: '#e879f9', fill: '#e879f9' }
@@ -101,14 +148,14 @@
 	});
 </script>
 
-<div class="flex items-start justify-between gap-4">
+<div class="flex flex-wrap items-start justify-between gap-4 pr-32">
 	<div>
 		<p class="caption-eyebrow">Parameter scatter</p>
 		<h2
 			class="block-title mt-1 text-2xl font-semibold"
 			style="color: var(--text-primary); letter-spacing: -0.01em;"
 		>
-			{yProperty} vs {xKey || '—'}
+			{yLabel || '—'} vs {xLabel || '—'}
 		</h2>
 		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">{points.length} points.</p>
 	</div>
@@ -116,29 +163,33 @@
 		<label class="flex items-center gap-1">
 			<span style="color: var(--text-muted);">Y</span>
 			<select
-				bind:value={yProperty}
-				class="rounded-md border px-2 py-1 text-xs"
+				bind:value={yId}
+				class="max-w-[180px] rounded-md border px-2 py-1 text-xs"
 				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
 			>
-				<option value="UTS">UTS</option>
-				<option value="E">E</option>
-				<option value="PS">Proof stress</option>
+				<optgroup label="Computed">
+					{#each paramOptions as o (o.id)}<option value={o.id}>{o.label}</option>{/each}
+				</optgroup>
+				<optgroup label="Metadata">
+					{#each metaOptions as o (o.id)}<option value={o.id}>{o.label}</option>{/each}
+				</optgroup>
 			</select>
 		</label>
-		{#if infoColumns.length}
-			<label class="flex items-center gap-1">
-				<span style="color: var(--text-muted);">X</span>
-				<select
-					bind:value={xKey}
-					class="rounded-md border px-2 py-1 text-xs"
-					style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
-				>
-					{#each infoColumns.filter((c) => c !== 'test_id') as col}
-						<option value={col}>{col}</option>
-					{/each}
-				</select>
-			</label>
-		{/if}
+		<label class="flex items-center gap-1">
+			<span style="color: var(--text-muted);">X</span>
+			<select
+				bind:value={xId}
+				class="max-w-[160px] rounded-md border px-2 py-1 text-xs"
+				style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
+			>
+				<optgroup label="Metadata">
+					{#each metaOptions as o (o.id)}<option value={o.id}>{o.label}</option>{/each}
+				</optgroup>
+				<optgroup label="Computed">
+					{#each paramOptions as o (o.id)}<option value={o.id}>{o.label}</option>{/each}
+				</optgroup>
+			</select>
+		</label>
 	</div>
 </div>
 
@@ -148,7 +199,7 @@
 		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">Load a dataset above.</p>
 	{:else if !points.length}
 		<p class="px-2 py-6 text-center text-sm italic" style="color: var(--text-muted); font-family: var(--font-serif);">
-			No numeric values for the chosen X key.
+			No numeric values for the chosen axes.
 		</p>
 	{/if}
 </div>

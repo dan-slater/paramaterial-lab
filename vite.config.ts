@@ -7,5 +7,12 @@ export default defineConfig({
 	server: {
 		host: '0.0.0.0',
 		port: 5173
+	},
+	ssr: {
+		// Native modules must not be bundled by Vite/Rollup.
+		external: ['better-sqlite3', '@node-rs/argon2']
+	},
+	optimizeDeps: {
+		exclude: ['better-sqlite3', '@node-rs/argon2']
 	}
 });

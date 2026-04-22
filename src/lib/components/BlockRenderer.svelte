@@ -12,6 +12,7 @@
 	import RambergOsgoodBlock from './blocks/RambergOsgoodBlock.svelte';
 	import ZenerHollomonBlock from './blocks/ZenerHollomonBlock.svelte';
 	import DatasetSummaryBlock from './blocks/DatasetSummaryBlock.svelte';
+	import ParametersBlock from './blocks/ParametersBlock.svelte';
 	import NoteBlock from './blocks/NoteBlock.svelte';
 
 	interface Props {
@@ -36,6 +37,7 @@
 				return 'figure';
 			case 'property-table':
 			case 'dataset-summary':
+			case 'parameters':
 				return 'table';
 			case 'note':
 				return 'note';
@@ -94,6 +96,8 @@
 		<RambergOsgoodBlock id={block.id} config={block.config} />
 	{:else if block.type === 'zener-hollomon'}
 		<ZenerHollomonBlock id={block.id} config={block.config} />
+	{:else if block.type === 'parameters'}
+		<ParametersBlock id={block.id} config={block.config} />
 	{:else if block.type === 'dataset-summary'}
 		<DatasetSummaryBlock id={block.id} config={block.config} />
 	{:else if block.type === 'note'}

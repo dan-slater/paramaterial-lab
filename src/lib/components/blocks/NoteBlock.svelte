@@ -8,6 +8,15 @@
 
 	let { id, config }: Props = $props();
 	let text = $state((config.text as string) ?? '');
+
+	let saveTimer: ReturnType<typeof setTimeout> | null = null;
+	function handleInput(e: Event) {
+		text = (e.target as HTMLTextAreaElement).value;
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => {
+			blocksStore.update(id, { config: { ...config, text } });
+		}, 200);
+	}
 </script>
 
 <div>
@@ -19,7 +28,8 @@
 		Observation
 	</h2>
 	<textarea
-		bind:value={text}
+		value={text}
+		oninput={handleInput}
 		rows="3"
 		placeholder="Write an observation or annotation for the report…"
 		class="mt-3 w-full resize-none rounded-md border p-3 text-sm focus:outline-none"

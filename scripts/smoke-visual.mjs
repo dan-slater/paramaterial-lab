@@ -9,7 +9,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:8080';
-const OUT = '/tmp/paramaterial-smoke';
+const OUT = process.env.SMOKE_OUT ?? new URL('../../tmp/visual-matrix-screenshots', import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });
 
 function clickByText(page, text, opts = {}) {

@@ -11,6 +11,8 @@
 		offsetStrain?: number;
 		offsetE?: number;
 		hiddenGroups?: Set<string>;
+		xLabel?: string;
+		yLabel?: string;
 	}
 
 	let {
@@ -20,7 +22,9 @@
 		showOffset = false,
 		offsetStrain = 0.002,
 		offsetE,
-		hiddenGroups = new Set<string>()
+		hiddenGroups = new Set<string>(),
+		xLabel = 'Strain',
+		yLabel = 'Stress (MPa)'
 	}: Props = $props();
 
 	let container: HTMLDivElement;
@@ -113,13 +117,13 @@
 			},
 			axes: [
 				{
-					label: 'Strain',
+					label: xLabel,
 					stroke: axisStroke,
 					grid: { stroke: gridStroke, width: 1 },
 					ticks: { stroke: tickStroke }
 				},
 				{
-					label: 'Stress (MPa)',
+					label: yLabel,
 					stroke: axisStroke,
 					grid: { stroke: gridStroke, width: 1 },
 					ticks: { stroke: tickStroke }

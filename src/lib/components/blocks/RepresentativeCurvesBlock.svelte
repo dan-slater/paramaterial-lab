@@ -4,6 +4,7 @@
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import { computeRepresentative } from '$lib/processing';
+	import { getPlotTheme } from '$lib/plotTheme';
 
 	interface Props {
 		id: string;
@@ -14,6 +15,8 @@
 
 	const tests = $derived(datasetStore.current?.tests ?? []);
 	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
+	const xLabel = $derived(datasetStore.current?.x_label ?? 'Strain');
+	const yLabel = $derived(datasetStore.current?.y_label ?? 'Stress (MPa)');
 	let groupBy = $state((config.groupBy as string) ?? '');
 
 	$effect(() => {
@@ -41,6 +44,7 @@
 		if (!container || !reps.length) return;
 		plot?.destroy();
 
+		const t = getPlotTheme();
 		// build common x = first rep's strain grid (they all use the same grid)
 		const x = reps[0].strain;
 		const data: uPlot.AlignedData = [x];
@@ -72,16 +76,16 @@
 			scales: { x: { time: false }, y: { range: [yMin - yPad, yMax + yPad] } },
 			axes: [
 				{
-					label: 'Strain',
-					stroke: '#9ca3af',
-					grid: { stroke: '#27272a', width: 1 },
-					ticks: { stroke: '#3f3f46' }
+					label: xLabel,
+					stroke: t.axis,
+					grid: { stroke: t.grid, width: 1 },
+					ticks: { stroke: t.tick }
 				},
 				{
-					label: 'Stress (MPa)',
-					stroke: '#9ca3af',
-					grid: { stroke: '#27272a', width: 1 },
-					ticks: { stroke: '#3f3f46' }
+					label: yLabel,
+					stroke: t.axis,
+					grid: { stroke: t.grid, width: 1 },
+					ticks: { stroke: t.tick }
 				}
 			],
 			legend: { show: true },

@@ -3,6 +3,7 @@
 	import uPlot from 'uplot';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import { fitRambergOsgood, type RambergOsgoodFit } from '$lib/processing';
+	import { getPlotTheme } from '$lib/plotTheme';
 
 	interface Props {
 		id: string;
@@ -67,6 +68,7 @@
 		}
 		const yPad = (yMax - yMin) * 0.05 || 1;
 
+		const t = getPlotTheme();
 		const opts: uPlot.Options = {
 			width: container.clientWidth,
 			height: 340,
@@ -74,15 +76,15 @@
 			axes: [
 				{
 					label: 'Strain',
-					stroke: '#9ca3af',
-					grid: { stroke: '#27272a', width: 1 },
-					ticks: { stroke: '#3f3f46' }
+					stroke: t.axis,
+					grid: { stroke: t.grid, width: 1 },
+					ticks: { stroke: t.tick }
 				},
 				{
 					label: 'Stress (MPa)',
-					stroke: '#9ca3af',
-					grid: { stroke: '#27272a', width: 1 },
-					ticks: { stroke: '#3f3f46' }
+					stroke: t.axis,
+					grid: { stroke: t.grid, width: 1 },
+					ticks: { stroke: t.tick }
 				}
 			],
 			legend: { show: false },

@@ -6,6 +6,23 @@ export const STORAGE_KEYS = {
 	chat: 'paramaterial:chat:v1'
 } as const;
 
+// ---------------------------------------------------------------------------
+// Report-context flag. When a project report is open, stores should suppress
+// the legacy localStorage autosave and defer to the server-backed one owned
+// by the report page. In standalone / unauthenticated mode this flag stays
+// `false` and the existing localStorage behavior is preserved.
+// ---------------------------------------------------------------------------
+
+let _inReportContext = false;
+
+export function setInReportContext(v: boolean) {
+	_inReportContext = v;
+}
+
+export function inReportContext(): boolean {
+	return _inReportContext;
+}
+
 function hasStorage(): boolean {
 	return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 }
@@ -26,6 +43,9 @@ const timers: Record<string, ReturnType<typeof setTimeout> | undefined> = {};
 // Debounced save — coalesces rapid writes into one commit after `delayMs` idle.
 export function saveJSONDebounced(key: string, value: unknown, delayMs = 50): void {
 	if (!hasStorage()) return;
+	// When a server-backed report is open, skip localStorage autosave; the
+	// report page owns server sync and we don't want two sources of truth.
+	if (_inReportContext) return;
 	const prev = timers[key];
 	if (prev) clearTimeout(prev);
 	timers[key] = setTimeout(() => {

@@ -10,6 +10,7 @@ export type BlockType =
 	| 'ramberg-osgood'
 	| 'zener-hollomon'
 	| 'dataset-summary'
+	| 'parameters'
 	| 'note';
 
 export interface Block {
@@ -180,6 +181,12 @@ export const TOOLS: Array<{ type: BlockType; label: string; description: string;
 		label: 'Dataset summary',
 		description: 'Counts, per-column stats, and strain/stress ranges for the loaded dataset.',
 		icon: 'Σ'
+	},
+	{
+		type: 'parameters',
+		label: 'Parameters',
+		description: 'Extract domain-aware scalar parameters per series (returns, drawdown, fade, trend, …).',
+		icon: 'ƒ'
 	},
 	{
 		type: 'note',

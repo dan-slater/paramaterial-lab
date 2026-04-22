@@ -212,6 +212,11 @@ export function computeRepresentative(
 		}
 		out.push({ key, strain: grid, mean, std, min: mins, max: maxs, n: members.length });
 	}
+	out.sort((a, b) => {
+		const na = Number(a.key), nb = Number(b.key);
+		if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+		return a.key.localeCompare(b.key);
+	});
 	return out;
 }
 
