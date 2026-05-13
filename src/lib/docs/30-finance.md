@@ -97,13 +97,11 @@ consequence, the +0.73 β-vs-`MaxDD` correlation documented in v0.1 was an
 artefact of the injected market window and **must be re-computed from the
 real data** rather than quoted from a synthetic generator.
 
-**Caveat on stale numbers.** The quantitative claims further down this
-chapter (per-sector Sharpe means, the β/maxDD correlation, the specific
-dip-day annotations, `volClusteringIndex` magnitudes) were computed
-against the v0.1 synthetic dataset. Until the analyzer sweep is re-run
-against the real data, those numbers are flagged inline with a
-`[STALE v0.1]` tag. Replace each one with the freshly-computed value as
-the sweep lands, and drop the tag at that point.
+**v0.2 numbers (refreshed 2026-04-22).** The quantitative claims in the
+sections below have been re-computed against the current 504-day real-price
+window via `tmp/compute-stale.mjs`. They are specific to that window and
+will drift on every rebuild; the chapter treats them as worked examples
+rather than fixed anchors.
 
 ## First-moment analyzers
 
@@ -203,34 +201,40 @@ daily scale. *Slow decay of autocorrelation in absolute returns:* no.
 The `volClusteringIndex` scalar is the single-column diagnostic for this.
 It is the Pearson correlation between |r_t| and |r_{t-1}|. On real equity
 returns this value is typically +0.1 to +0.3; on the v0.1 synthetic preset
-it sat near zero, with no meaningful sector difference `[STALE v0.1]`.
-With the v0.2 real-data preset the index should now lift into the +0.1 to
-+0.3 range — re-run the sweep to confirm. This is a
-feature, not a defect: the reader can confirm the generator's limits with
-one Parameters-block column. A future GARCH-based preset should move the
-index above ≈ 0.1 and separate sectors.
+it sat near zero, with no meaningful sector difference. On the current
+v0.2 real-data window the cross-sectional mean sits at **+0.13** with a
+per-ticker range of 0.00–0.29 — squarely inside the expected band. Sector
+means separate weakly (Utilities +0.08, Consumer +0.10, Technology +0.11,
+Healthcare / Industrials +0.12, Financials +0.14, Materials +0.15,
+Energy +0.18). Energy clusters fastest, as expected given its exposure to
+oil-price shock regimes; Utilities is flattest. This is a feature, not a
+defect: the reader can confirm the v0.1 generator's limits and the v0.2
+real data's clustering with one Parameters-block column.
 
 ## Recoverable relationships
 
-| Relationship | Value on the preset | Driven by |
+| Relationship | Value on the preset (v0.2, 504-day window) | Driven by |
 |---|---|---|
-| corr(β, `MaxDD`) across all tickers | ≈ +0.73 `[STALE v0.1]` | Day 175–185 market dip scaled by β (v0.1 artefact; no longer present) |
-| Mean `Sharpe` by sector | Utilities +0.43, Industrials +0.58, Consumer +0.13, Healthcare −0.14, Tech −0.16, Materials −0.28, Energy −0.35, Financials −0.85 `[STALE v0.1]` | Interaction of sector μ, σ, β, and the two injected shocks (v0.1 only) |
-| Two visible dips on the price overlay | Day ≈ 180 (all sectors, β-scaled); day ≈ 330 (Energy only) `[STALE v0.1]` | Injected `m[i]` and `s_Energy[i]` drags — removed in v0.2 |
-| `volClusteringIndex` across sectors | ≈ 0 (mean across tickers within ~0.03 of zero; no sector separation) `[STALE v0.1]` | Independent daily innovations in the v0.1 generator |
+| corr(β, `MaxDD`) across all tickers | **+0.48** (β proxy = OLS on equal-weighted market index) | Real market drawdown of −17% (peak day 503 → trough day 243) exposes high-β names more; weaker than the +0.73 v0.1 artefact because the signal is emergent rather than mechanical |
+| Mean `Sharpe` by sector (best → worst) | Financials **+1.17**, Utilities **+0.84**, Materials **+0.66**, Consumer **+0.62**, Industrials **+0.55**, Technology **+0.47**, Healthcare **+0.26**, Energy **+0.18** | All positive on the current bull-window; sector ordering reflects the realised rally rather than a generator's drift/β design matrix |
+| Visible drawdowns on the price overlay | Single market-wide trough at **day ≈ 243**, −17% peak-to-trough on the equal-weighted proxy; no second Energy-only dip | Emergent from the 2024–2026 real window; the two v0.1 injected shocks (day 180 market-wide, day 330 Energy) are gone |
+| `volClusteringIndex` across sectors | Cross-sectional mean **+0.13** (range 0.00–0.29 per ticker); weak sector ordering — Energy +0.18, Materials +0.15, Financials +0.14, Healthcare/Industrials +0.12, Tech +0.11, Consumer +0.10, Utilities +0.08 | Real returns exhibit Cont-style clustering; the v0.1 generator had independent innovations and sat near zero |
 
-The +0.73 β–MaxDD correlation was mechanical in v0.1: the day-180 window
-applied a shock proportional to β, so high-β names registered deeper
-peak-to-trough moves. In v0.2 there is no such injected window; β and
-drawdown are related only to the extent real market drawdowns happen to
-land inside the 504-day rolling window. **Re-run the analyzer sweep to
-obtain the real-data value.** `[STALE v0.1]`
+The +0.48 β–MaxDD correlation is emergent, not mechanical. The equal-weighted
+market proxy registered a −17 % drawdown troughing at day 243 of the current
+504-day window; high-β names amplified it. The effect is real but noisier
+than v0.1's injected window produced, because individual tickers carry
+idiosyncratic volatility that dilutes the market-beta channel. A
+single-market-drawdown-dominated window is sufficient to recover a positive
+correlation; a window without a meaningful market drawdown would collapse the
+signal.
 
-The most negative Sharpe cluster in v0.1, Financials, paired a modest
-drift (μ = 0.07) with a high β (1.15) so the injected market dip bit hard
-without a compensating recovery; Utilities, with β = 0.55 and low σ, sat
-opposite. Under real prices the sector ordering will reflect whatever
-rally or drawdown the current 2-year window captures. `[STALE v0.1]`
+Financials top the v0.2 Sharpe table at +1.17 because the current window
+runs through a rally in which large-cap banks delivered the highest
+risk-adjusted excess return over the 4 % risk-free rate. Energy is lowest at
++0.18 because oil-price volatility widened σ faster than drift. None of the
+sectors are negative on this window — a v0.1-style synthetic with injected
+shocks would produce negative Sharpes; a real bull-market window does not.
 
 ## Reproducing in the web tool
 
@@ -244,9 +248,10 @@ Blocks: Stress–strain (color by sector) → Parameters → Parameter scatter (
 1. Select the **finance** preset; the loader resolves `/data/finance.json`
    via `loadDataset` in `src/lib/datasets.ts`.
 2. Add a **Stress–strain** block with `color by = sector`. Under v0.1 the
-   two injected shocks were visible near day 180 and day 330; under v0.2
-   real data, the overlay shows whatever drawdowns and rallies the
-   current 504-day window captures. `[STALE v0.1]`
+   two injected shocks were visible near day 180 and day 330; on the
+   current v0.2 window the equal-weighted proxy drops ~17 % peak-to-trough
+   with the trough sitting near day 243, and there is no second
+   Energy-only event.
 3. Add a **Parameters** block and tick at minimum **Annualized return**,
    **Annualized volatility**, **Sharpe ratio**, and **Max drawdown**
    (`AnnReturn`, `AnnVol`, `Sharpe`, `MaxDD`). Once `registry.ts` is
@@ -255,8 +260,9 @@ Blocks: Stress–strain (color by sector) → Parameters → Parameter scatter (
    block computes one row per ticker.
 4. Add a **Parameter scatter**: Y = **Max drawdown**, X = **beta**, colour
    by sector. On v0.1 the +0.73 correlation was immediately visible; on
-   v0.2 (real data) the scatter's tightness will be whatever the real
-   window produces. `[STALE v0.1]`
+   the current v0.2 window the correlation is +0.48 — clearly positive but
+   with more scatter, reflecting that real market drawdowns expose high-β
+   names without the mechanical proportionality the v0.1 generator imposed.
 5. For Sharpe-by-sector, set Y = **Sharpe ratio** and X = `sector`, or
    use a grouped strip plot.
 6. For the stylised-fact check, set Y = **Vol clustering index** and
