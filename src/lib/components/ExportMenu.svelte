@@ -2,6 +2,7 @@
 	import { blocksStore, type Block } from '$lib/stores/blocks.svelte';
 	import { chatStore, type ChatMessage } from '$lib/stores/chat.svelte';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { getParameterDefs } from '$lib/analyzers/registry';
 	import {
 		findUplLpl,
 		findE,
@@ -267,28 +268,24 @@ ${body}
 	}
 
 	function renderScatterMd(b: Block): string {
-		const tests = datasetStore.current?.tests ?? [];
-		const xKey = (b.config?.xKey as string) ?? '—';
-		const yProp = (b.config?.yProperty as string) ?? 'UTS';
-		let n = 0;
-		for (const t of tests) {
-			const xv = Number(t.meta[xKey]);
-			if (!Number.isFinite(xv)) continue;
-			try {
-				if (yProp === 'UTS') {
-					findUTS({ strain: t.strain, stress: t.stress });
-				} else if (yProp === 'E') {
-					findUplLpl({ strain: t.strain, stress: t.stress });
-				} else {
-					const foot = findUplLpl({ strain: t.strain, stress: t.stress });
-					findProofStress({ strain: t.strain, stress: t.stress }, foot.E);
-				}
-				n++;
-			} catch {
-				/* skip */
+		const ds = datasetStore.current;
+		const tests = ds?.tests ?? [];
+		const params = getParameterDefs(ds?.domain);
+		const xId = (b.config?.xId as string) ?? '';
+		const yId = (b.config?.yId as string) ?? '';
+		if (!xId || !yId) return '_Axes not chosen yet._';
+		const value = (tok: string, t: (typeof tests)[number]): number | null => {
+			const [kind, key] = tok.split(':');
+			if (kind === 'meta') {
+				const v = Number(t.meta[key]);
+				return Number.isFinite(v) ? v : null;
 			}
-		}
-		return `**${yProp}** vs **${xKey}**, ${n} points.`;
+			const p = params.find((pp) => pp.key === key);
+			return p ? p.extract({ strain: t.strain, stress: t.stress }, t.meta) : null;
+		};
+		const n = tests.filter((t) => value(xId, t) !== null && value(yId, t) !== null).length;
+		const label = (tok: string) => tok.split(':')[1] ?? tok;
+		return `**${label(yId)}** vs **${label(xId)}**, ${n} points.`;
 	}
 
 	function renderRambergOsgoodMd(): string {

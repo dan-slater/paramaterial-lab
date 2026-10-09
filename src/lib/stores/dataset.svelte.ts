@@ -9,6 +9,10 @@ interface DatasetState {
 	needsReupload: boolean;
 }
 
+// Incremented on every load/set/clear so a slow fetch cannot overwrite a newer
+// choice (e.g. the init-time rehydrate racing a /lab/<preset> route load).
+let generation = 0;
+
 const state = $state<DatasetState>({
 	current: null,
 	loading: false,
@@ -46,12 +50,14 @@ export const datasetStore = {
 		return state.needsReupload;
 	},
 	set(ds: Dataset) {
+		generation++;
 		state.current = ds;
 		state.error = null;
 		state.needsReupload = false;
 		syncPickerConfig(ds);
 	},
 	clear() {
+		generation++;
 		state.current = null;
 		state.error = null;
 		state.needsReupload = false;
@@ -61,18 +67,21 @@ export const datasetStore = {
 		state.needsReupload = false;
 	},
 	async load(id: string, fetchFn: typeof fetch = fetch) {
+		const mine = ++generation;
 		state.loading = true;
 		state.error = null;
 		try {
 			const res = await fetchFn(`/data/${id}.json`);
 			if (!res.ok) throw new Error(`Failed to load ${id}: ${res.status}`);
-			state.current = await res.json();
+			const ds = (await res.json()) as Dataset;
+			if (mine !== generation) return;
+			state.current = ds;
 			state.needsReupload = false;
 			syncPickerConfig(state.current);
 		} catch (e) {
-			state.error = e instanceof Error ? e.message : String(e);
+			if (mine === generation) state.error = e instanceof Error ? e.message : String(e);
 		} finally {
-			state.loading = false;
+			if (mine === generation) state.loading = false;
 		}
 	}
 };

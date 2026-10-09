@@ -31,7 +31,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
 			{ type: 'stress-strain', config: { colorBy: 'temperature' } },
 			{ type: 'foot-correction' },
 			{ type: 'property-table' },
-			{ type: 'scatter', config: { xKey: 'temperature', yProperty: 'UTS' } }
+			{ type: 'scatter', config: { xId: 'meta:temperature', yId: 'param:UTS' } }
 		]
 	},
 	{
@@ -55,7 +55,43 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
 			{ type: 'dataset-picker' },
 			{ type: 'foot-correction' },
 			{ type: 'property-table' },
-			{ type: 'scatter', config: { xKey: 'lot', yProperty: 'E' } }
+			{ type: 'scatter', config: { xId: 'meta:lot', yId: 'param:E' } }
+		]
+	},
+	{
+		id: 'finance-overview',
+		name: 'Finance overview',
+		description:
+			'Price series coloured by sector, per-ticker parameters, scatter max drawdown vs annualized volatility.',
+		blocks: [
+			{ type: 'dataset-picker' },
+			{ type: 'stress-strain', config: { colorBy: 'sector' } },
+			{ type: 'parameters' },
+			{ type: 'scatter', config: { xId: 'param:AnnVol', yId: 'param:MaxDD' } }
+		]
+	},
+	{
+		id: 'climate-overview',
+		name: 'Climate overview',
+		description:
+			'Daily temperature coloured by hemisphere, per-station parameters, scatter annual mean vs latitude.',
+		blocks: [
+			{ type: 'dataset-picker' },
+			{ type: 'stress-strain', config: { colorBy: 'hemisphere' } },
+			{ type: 'parameters' },
+			{ type: 'scatter', config: { xId: 'meta:latitude', yId: 'param:AnnMean' } }
+		]
+	},
+	{
+		id: 'battery-overview',
+		name: 'Battery overview',
+		description:
+			'Capacity fade coloured by batch, per-cell fade parameters, scatter cycle life vs charge C-rate.',
+		blocks: [
+			{ type: 'dataset-picker' },
+			{ type: 'stress-strain', config: { colorBy: 'cell_group' } },
+			{ type: 'parameters' },
+			{ type: 'scatter', config: { xId: 'meta:nominal_c_rate_charge', yId: 'meta:cycle_life' } }
 		]
 	}
 ];

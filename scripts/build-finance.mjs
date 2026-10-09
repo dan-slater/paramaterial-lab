@@ -247,8 +247,8 @@ async function main() {
 
   const dataset = {
     id: 'finance',
-    name: 'Finance — Daily Stock Returns (Stooq)',
-    description: 'Real adjusted-close prices for ~40 US equities across 8 sectors, pulled from Stooq.',
+    name: `Finance — Daily Stock Returns (${source === 'yahoo' ? 'Yahoo Finance' : 'Stooq'})`,
+    description: `Real adjusted-close prices for ${tests.length} US equities across 8 sectors, pulled from ${source === 'yahoo' ? 'Yahoo Finance' : 'Stooq'}.`,
     domain: 'finance',
     x_label: 'trading day',
     y_label: 'Adjusted close (USD)',

@@ -1,53 +1,17 @@
 <script lang="ts">
 	import { PRESET_DATASETS } from '$lib/datasets';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
-
-	let uploadError = $state<string | null>(null);
-	let uploading = $state(false);
+	import CsvImportPanel from '$lib/components/CsvImportPanel.svelte';
 
 	async function selectPreset(id: string) {
 		await datasetStore.load(id);
 	}
 
-	async function handleFile(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-		uploading = true;
-		uploadError = null;
-		try {
-			const text = await file.text();
-			const lines = text.trim().split(/\r?\n/);
-			const headers = lines[0].split(',').map((h) => h.trim());
-			const strainIdx = headers.findIndex((h) => /strain/i.test(h));
-			const stressIdx = headers.findIndex((h) => /stress/i.test(h));
-			if (strainIdx < 0 || stressIdx < 0) {
-				throw new Error(`CSV must have Strain and Stress columns. Got: ${headers.join(', ')}`);
-			}
-			const strain: number[] = [];
-			const stress: number[] = [];
-			for (let i = 1; i < lines.length; i++) {
-				const row = lines[i].split(',');
-				const s = parseFloat(row[strainIdx]);
-				const y = parseFloat(row[stressIdx]);
-				if (Number.isFinite(s) && Number.isFinite(y)) {
-					strain.push(s);
-					stress.push(y);
-				}
-			}
-			datasetStore.set({
-				id: 'upload',
-				name: file.name,
-				description: `Uploaded ${file.name} (${strain.length} points)`,
-				info_columns: [],
-				tests: [{ test_id: file.name, meta: {}, strain, stress }]
-			});
-		} catch (err) {
-			uploadError = err instanceof Error ? err.message : String(err);
-		} finally {
-			uploading = false;
-		}
-	}
+	const groups = [
+		{ label: null, items: PRESET_DATASETS.filter((d) => d.headline) },
+		{ label: 'Thesis case studies', items: PRESET_DATASETS.filter((d) => !d.headline) }
+	];
+	const currentPreset = $derived(PRESET_DATASETS.find((d) => d.id === datasetStore.current?.id));
 </script>
 
 {#if datasetStore.current}
@@ -65,13 +29,23 @@
 		>
 			{datasetStore.current.tests.length} tests · {datasetStore.current.description}
 		</p>
-		<button
-			onclick={() => datasetStore.clear()}
-			class="mt-3 rounded-md border px-3 py-1.5 text-xs transition-colors"
-			style="border-color: var(--border-default); color: var(--text-secondary);"
-		>
-			Change dataset
-		</button>
+		<div class="mt-3 flex flex-wrap items-center gap-3">
+			<button
+				onclick={() => datasetStore.clear()}
+				class="rounded-md border px-3 py-1.5 text-xs transition-colors"
+				style="border-color: var(--border-default); color: var(--text-secondary);"
+			>
+				Change dataset
+			</button>
+			{#if currentPreset}
+				<a
+					href="/lab/{currentPreset.slug}"
+					class="text-xs underline underline-offset-2"
+					style="color: var(--text-muted);"
+					data-testid="preset-link">Link to this preset: /lab/{currentPreset.slug}</a
+				>
+			{/if}
+		</div>
 	</div>
 {:else}
 	<p class="caption-eyebrow">Start here</p>
@@ -82,11 +56,13 @@
 		Choose a dataset
 	</h2>
 	<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
-		Pick a preset or upload a stress–strain CSV. Subsequent blocks will draw from this dataset.
+		Pick a preset or import your own CSV. Subsequent blocks will draw from this dataset.
 	</p>
 
-	<div class="mt-4 grid gap-3 sm:grid-cols-2">
-		{#each PRESET_DATASETS as ds}
+	{#each groups as g}
+	{#if g.label}<p class="caption-eyebrow mt-4">{g.label}</p>{/if}
+	<div class="mt-3 grid gap-3 sm:grid-cols-2">
+		{#each g.items as ds (ds.id)}
 			<button
 				type="button"
 				onclick={() => selectPreset(ds.id)}
@@ -118,17 +94,9 @@
 			</button>
 		{/each}
 	</div>
+	{/each}
 
-	<label
-		class="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed px-4 py-4 text-sm transition-colors"
-		style="border-color: var(--border-default); color: var(--text-muted);"
-	>
-		<span>Upload CSV (Strain, Stress columns)</span>
-		<input type="file" accept=".csv" class="hidden" onchange={handleFile} disabled={uploading} />
-	</label>
-	{#if uploadError}
-		<p class="mt-2 text-xs text-red-400">{uploadError}</p>
-	{/if}
+	<CsvImportPanel />
 	{#if datasetStore.loading}
 		<p class="mt-2 text-xs" style="color: var(--text-muted);">Loading…</p>
 	{/if}

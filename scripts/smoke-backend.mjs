@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const root = resolve(__dirname, '..');
-const PORT = 4175;
+const PORT = Number(process.env.SMOKE_PORT ?? 3081);
 const BASE = `http://127.0.0.1:${PORT}`;
 const DB_PATH = resolve(root, 'tmp-smoke.db');
 const COOKIE_JAR = new Map(); // sessionKey -> { name -> value }
