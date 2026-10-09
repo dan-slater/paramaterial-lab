@@ -34,7 +34,7 @@ async function runForViewport(label, deviceName, viewport) {
 	// Pick first preset from the dataset-picker block
 	await page.evaluate(() => {
 		const btn = [...document.querySelectorAll('button')].find((b) =>
-			b.textContent?.includes('Basic Usage')
+			b.textContent?.includes('Materials — Uniaxial')
 		);
 		btn?.click();
 	});

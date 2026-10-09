@@ -23,7 +23,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		const origin = event.request.headers.get('origin');
 		const xrw = event.request.headers.get('x-requested-with');
 		const host = event.request.headers.get('host');
-		const sameOrigin = !!origin && !!host && origin.endsWith(host);
+		let sameOrigin = false;
+		try {
+			sameOrigin = !!origin && !!host && new URL(origin).host === host;
+		} catch {
+			sameOrigin = false;
+		}
 		const okXrw = xrw === 'paramaterial';
 		if (!sameOrigin && !okXrw && method !== 'OPTIONS') {
 			return new Response('Forbidden (csrf)', { status: 403 });

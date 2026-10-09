@@ -76,7 +76,7 @@ async function gotoFresh(page) {
 async function loadPreset(page, id) {
 	// Trigger via the preset-grid button text; Basic Usage / CS1…CS4 share name patterns.
 	const labels = {
-		'basic-usage': 'Basic Usage',
+		'basic-usage': 'Materials — Uniaxial',
 		cs1: 'CS1',
 		cs2: 'CS2',
 		cs3: 'CS3',
@@ -89,7 +89,7 @@ async function loadPreset(page, id) {
 	// Poll for dataset loading to actually finish
 	for (let i = 0; i < 30; i++) {
 		const ok = await page.evaluate(() => {
-			const h = document.querySelector('body > header');
+			const h = document.querySelector('header');
 			return !!h && /tests/.test(h.textContent || '');
 		});
 		if (ok) break;
@@ -153,7 +153,7 @@ const SCENARIOS = [
 			// Nothing else to do.
 		},
 		async expect(page) {
-			const count = await page.locator('button:has-text("Basic Usage")').count();
+			const count = await page.locator('button:has-text("Materials — Uniaxial")').count();
 			return { ok: count >= 1, info: `Basic Usage button count=${count}` };
 		}
 	},
@@ -161,17 +161,18 @@ const SCENARIOS = [
 		name: '03-csv-upload-error',
 		async setup(page) {
 			await gotoFresh(page);
-			// Inject a bogus file lacking a Strain column.
-			const bad = 'Time,Load\n0,0\n1,10\n';
-			await page.setInputFiles('input[type="file"][accept=".csv"]', {
+			// A file with no numeric series: the importer must say so, not crash.
+			const bad = 'name,colour\nfoo,red\nbar,blue\n';
+			await page.setInputFiles('[data-testid="csv-input"]', {
 				name: 'bad.csv',
 				mimeType: 'text/csv',
 				buffer: Buffer.from(bad)
 			});
-			await page.waitForTimeout(400);
+			await page.locator('[data-testid="csv-import-go"]').click();
+			await page.waitForTimeout(300);
 		},
 		async expect(page) {
-			const err = await page.locator('text=CSV must have Strain and Stress').count();
+			const err = await page.locator('[data-testid="csv-error"]').count();
 			return { ok: err >= 1 };
 		}
 	},
@@ -180,16 +181,17 @@ const SCENARIOS = [
 		async setup(page) {
 			await gotoFresh(page);
 			const good = 'Strain,Stress\n0,0\n0.01,200\n0.02,350\n0.03,420\n0.04,450\n';
-			await page.setInputFiles('input[type="file"][accept=".csv"]', {
+			await page.setInputFiles('[data-testid="csv-input"]', {
 				name: 'good.csv',
 				mimeType: 'text/csv',
 				buffer: Buffer.from(good)
 			});
+			await page.locator('[data-testid="csv-import-go"]').click();
 			await page.waitForTimeout(500);
 		},
 		async expect(page) {
-			const header = await page.locator('body > header').first().textContent();
-			return { ok: /tests/.test(header || ''), info: header?.trim() };
+			const header = await page.locator('header').first().textContent();
+			return { ok: /good · 1 tests/.test(header || ''), info: header?.trim() };
 		}
 	},
 	{
@@ -231,7 +233,7 @@ const SCENARIOS = [
 			if (!ok) throw new Error(`preset ${id} not clickable`);
 		},
 		async expect(page) {
-			const header = await page.locator('body > header').first().textContent();
+			const header = await page.locator('header').first().textContent();
 			return { ok: /tests/.test(header || ''), info: header?.trim()?.slice(0, 60) };
 		}
 	})),

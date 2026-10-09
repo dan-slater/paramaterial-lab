@@ -1,3 +1,4 @@
+import { readJson } from '$lib/server/body';
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
@@ -46,7 +47,7 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 	if (!locals.user) throw error(401, 'Not signed in');
 	if (!requireRole(params.id, locals.user.id, 'editor'))
 		throw error(403, 'editor role required');
-	const body = (await request.json().catch(() => ({}))) as {
+	const body = (await readJson(request)) as {
 		name?: string;
 		description?: string | null;
 	};

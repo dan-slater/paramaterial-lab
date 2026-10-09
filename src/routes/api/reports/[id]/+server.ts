@@ -1,3 +1,4 @@
+import { readJson } from '$lib/server/body';
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
@@ -53,7 +54,7 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 	if (!report) throw error(404, 'Report not found');
 	if (!requireRole(report.project_id, locals.user.id, 'editor'))
 		throw error(403, 'editor role required');
-	const body = (await request.json().catch(() => ({}))) as {
+	const body = (await readJson(request)) as {
 		name?: string;
 		blocks?: unknown;
 		chat?: unknown;

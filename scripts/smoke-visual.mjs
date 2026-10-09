@@ -48,8 +48,8 @@ async function runViewport(label, viewportSpec) {
 	await page.goto(BASE + '/', { waitUntil: 'networkidle' });
 	await snap('01-landing-empty');
 
-	// ── 02. Pick "Basic Usage" preset ─────────────────────────────────
-	await clickByText(page, 'Basic Usage');
+	// ── 02. Pick "Materials — Uniaxial" preset ─────────────────────────────────
+	await clickByText(page, 'Materials — Uniaxial');
 	await page.waitForTimeout(1500);
 	await snap('02-dataset-loaded');
 

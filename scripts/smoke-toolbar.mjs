@@ -27,7 +27,7 @@ await page.goto(BASE + '/', { waitUntil: 'networkidle' });
 // Load a preset so tools become meaningful.
 await page.evaluate(() => {
 	const btn = [...document.querySelectorAll('button')].find((b) =>
-		b.textContent?.includes('Basic Usage')
+		b.textContent?.includes('Materials — Uniaxial')
 	);
 	btn?.click();
 });

@@ -27,7 +27,7 @@ await page.reload({ waitUntil: 'networkidle' });
 // 2) Pick a preset
 await page.evaluate(() => {
 	const btn = [...document.querySelectorAll('button')].find((b) =>
-		b.textContent?.includes('Basic Usage')
+		b.textContent?.includes('Materials — Uniaxial')
 	);
 	btn?.click();
 });
@@ -69,7 +69,7 @@ const pass =
 	countAfter === 3 &&
 	types.includes('stress-strain') &&
 	types.includes('property-table') &&
-	datasetNameAfter.includes('Basic Usage') &&
+	datasetNameAfter.includes('Materials — Uniaxial') &&
 	errors.length === 0;
 
 console.log(JSON.stringify(

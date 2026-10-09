@@ -70,6 +70,9 @@
 		>
 			{mode === 'login' ? 'Sign in' : 'Create an account'}
 		</h2>
+		<p class="caption-note mt-1 text-xs" style="color: var(--text-muted);">
+			An account only saves projects. The presets, CSV import and chat work without one.
+		</p>
 
 		<form class="mt-4 flex flex-col gap-3" onsubmit={submit}>
 			{#if mode === 'register'}
@@ -102,7 +105,8 @@
 					type="password"
 					bind:value={password}
 					required
-					minlength={6}
+					minlength={mode === 'register' ? 10 : undefined}
+					maxlength={256}
 					autocomplete={mode === 'login' ? 'current-password' : 'new-password'}
 					class="rounded-md border px-3 py-2 text-sm"
 					style="background: var(--surface-sunk); border-color: var(--border-default); color: var(--text-primary);"
@@ -124,16 +128,20 @@
 		</form>
 
 		<div class="mt-4 flex items-center justify-between text-xs" style="color: var(--text-muted);">
-			<button
-				type="button"
-				onclick={() => {
-					mode = mode === 'login' ? 'register' : 'login';
-					err = null;
-				}}
-				class="underline-offset-2 hover:underline"
-			>
-				{mode === 'login' ? 'Need an account? Register' : 'Have an account? Sign in'}
-			</button>
+			{#if sessionStore.allowSignup || mode === 'register'}
+				<button
+					type="button"
+					onclick={() => {
+						mode = mode === 'login' ? 'register' : 'login';
+						err = null;
+					}}
+					class="underline-offset-2 hover:underline"
+				>
+					{mode === 'login' ? 'Need an account? Register' : 'Have an account? Sign in'}
+				</button>
+			{:else}
+				<span>Registration is closed.</span>
+			{/if}
 			<button type="button" onclick={close} class="underline-offset-2 hover:underline">
 				Close
 			</button>

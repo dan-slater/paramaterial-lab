@@ -2,6 +2,7 @@
 	"name": "web",
 	"private": true,
 	"version": "0.0.1",
+	"license": "SEE LICENSE IN LICENSE",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -9,7 +10,13 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"start": "node build",
+		"test:csv": "node scripts/test-csv-import.mjs",
+		"numbers": "node scripts/chapter-numbers.mjs",
+		"smoke:lab": "node scripts/smoke-lab.mjs",
+		"smoke:hosted": "node scripts/smoke-hosted.mjs",
+		"smoke:backend": "node scripts/smoke-backend.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.5.4",

@@ -5,3 +5,10 @@ build
 .DS_Store
 # generated data fixtures (regenerate via scripts/build_data.py)
 static/data/*.json
+# local env and runtime state (SQLite lives in DATA_DIR, default ./data)
+.env.*
+!.env.example
+data/
+*.db
+*.db-wal
+*.db-shm

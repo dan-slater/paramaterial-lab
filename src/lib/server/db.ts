@@ -1,14 +1,24 @@
 /**
  * SQLite database handle (single process-wide instance).
  *
- * Opens `process.env.DB_PATH ?? './paramaterial.db'` on first import. Creates
- * the schema if missing. Uses WAL for better concurrent reads.
+ * Opens `<DATA_DIR>/paramaterial.db` (DATA_DIR defaults to ./data and is
+ * created if missing) on first use, or `DB_PATH` verbatim if that is set (the
+ * backend smoke uses it). Creates the schema if missing. Uses WAL for better
+ * concurrent reads.
  *
  * Kept intentionally raw-SQL — no ORM. We'll migrate to Postgres later.
  */
 import Database from 'better-sqlite3';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { dataDir } from './config';
 
-const DB_PATH = process.env.DB_PATH ?? './paramaterial.db';
+function dbPath(): string {
+	if (process.env.DB_PATH) return process.env.DB_PATH;
+	const dir = dataDir();
+	mkdirSync(dir, { recursive: true });
+	return join(dir, 'paramaterial.db');
+}
 
 let _db: Database.Database | null = null;
 
@@ -61,7 +71,7 @@ function init(db: Database.Database) {
 
 export function db(): Database.Database {
 	if (_db) return _db;
-	_db = new Database(DB_PATH);
+	_db = new Database(dbPath());
 	init(_db);
 	return _db;
 }

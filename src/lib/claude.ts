@@ -5,8 +5,11 @@
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const API_VERSION = '2023-06-01';
-// Current latest Sonnet model as of this build.
-export const CLAUDE_MODEL = 'claude-sonnet-4-6';
+// Current Sonnet as of 2026-10 (Claude Sonnet 5.5). Thinking is on by default on
+// this model, so requests set a low effort (chat route) and leave room in
+// max_tokens; forced tool_choice, thinking:disabled and temperature are rejected,
+// and this client sends none of them.
+export const CLAUDE_MODEL = 'claude-sonnet-5-5';
 
 export const APIKEY_STORAGE_KEY = 'paramaterial:apikey:v1';
 
@@ -102,7 +105,8 @@ export async function callClaude(req: MessagesRequest): Promise<MessagesResponse
 
 	const body = {
 		model: CLAUDE_MODEL,
-		max_tokens: req.max_tokens ?? 1024,
+		max_tokens: req.max_tokens ?? 4096,
+		output_config: { effort: 'low' },
 		system: req.system,
 		messages: req.messages,
 		tools: req.tools

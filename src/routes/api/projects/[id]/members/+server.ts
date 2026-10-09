@@ -1,3 +1,4 @@
+import { readJson } from '$lib/server/body';
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { addMemberByEmail, listMembers, requireRole } from '$lib/server/projects';
@@ -21,7 +22,7 @@ export const POST: RequestHandler = async ({ locals, params, request }) => {
 	if (!locals.user) throw error(401, 'Not signed in');
 	if (!requireRole(params.id, locals.user.id, 'owner'))
 		throw error(403, 'owner role required');
-	const body = (await request.json().catch(() => ({}))) as {
+	const body = (await readJson(request)) as {
 		email?: string;
 		role?: string;
 	};

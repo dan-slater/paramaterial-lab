@@ -8,6 +8,7 @@
  */
 import { hash, verify } from '@node-rs/argon2';
 import { db, newId } from './db';
+import { DISPLAY_NAME_MAX, EMAIL_MAX, PASSWORD_MAX, PASSWORD_MIN } from './config';
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const REFRESH_WINDOW_MS = 24 * 60 * 60 * 1000; // refresh if < 24h remaining? (actually we extend anytime)
@@ -85,7 +86,15 @@ export async function createUser(
 	displayName: string
 ): Promise<{ id: string } | { error: 'email_taken' | 'invalid' }> {
 	const normEmail = email.trim().toLowerCase();
-	if (!normEmail || !password || password.length < 6 || !displayName.trim()) {
+	if (
+		!normEmail ||
+		normEmail.length > EMAIL_MAX ||
+		!/^[^\s@]+@[^\s@]+$/.test(normEmail) ||
+		password.length < PASSWORD_MIN ||
+		password.length > PASSWORD_MAX ||
+		!displayName.trim() ||
+		displayName.trim().length > DISPLAY_NAME_MAX
+	) {
 		return { error: 'invalid' };
 	}
 	const existing = db().prepare('SELECT id FROM users WHERE email = ?').get(normEmail);
@@ -110,10 +119,21 @@ export async function authenticate(
 		.get(normEmail) as
 		| { id: string; email: string; display_name: string; password_hash: string }
 		| undefined;
-	if (!row) return null;
+	if (!row) {
+		// Spend the same argon2 time as a real check so response timing does not
+		// reveal which emails have accounts.
+		await verifyPassword(await dummyHash(), password);
+		return null;
+	}
 	const ok = await verifyPassword(row.password_hash, password);
 	if (!ok) return null;
 	return { id: row.id, email: row.email, displayName: row.display_name };
+}
+
+let _dummy: Promise<string> | null = null;
+function dummyHash(): Promise<string> {
+	_dummy ??= hashPassword(randomToken());
+	return _dummy;
 }
 
 function randomToken(): string {

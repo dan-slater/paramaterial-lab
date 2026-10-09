@@ -1,0 +1,30 @@
+# systemd USER unit for the paramaterial lab (SvelteKit, adapter-node).
+# Install: ~/.config/systemd/user/paramaterial-lab.service  (see deploy/README.md)
+# Deploy dir: ~/apps/paramaterial-lab  containing build/, node_modules/, package*.json, .env, data/
+
+[Unit]
+Description=paramaterial lab (SvelteKit / adapter-node)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/apps/paramaterial-lab
+# Safe defaults; .env (loaded after) overrides any of them.
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3080
+Environment=DATA_DIR=%h/apps/paramaterial-lab/data
+EnvironmentFile=%h/apps/paramaterial-lab/.env
+# Absolute path required. Replace with the output of `command -v node` if Node
+# is not at /usr/bin/node (e.g. nvm installs under ~/.nvm/versions/...).
+ExecStart=/usr/bin/node build
+Restart=always
+RestartSec=3
+# adapter-node drains in-flight requests on SIGTERM for up to SHUTDOWN_TIMEOUT (30 s).
+KillSignal=SIGTERM
+TimeoutStopSec=35
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

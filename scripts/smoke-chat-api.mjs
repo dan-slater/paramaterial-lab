@@ -43,7 +43,20 @@ await page.evaluate(() => {
 	window.fetch = async (url, opts) => {
 		const u = typeof url === 'string' ? url : url.url;
 		if (u.includes('api.anthropic.com')) {
-			calls.push({ url: u, round });
+			let body = {};
+			try {
+				body = JSON.parse(opts?.body ?? '{}');
+			} catch {
+				/* leave empty */
+			}
+			calls.push({
+				url: u,
+				round,
+				model: body.model,
+				effort: body.output_config?.effort,
+				// Fields Claude Sonnet 5.5 rejects with a 400.
+				rejected: ['tool_choice', 'temperature', 'thinking'].filter((k) => k in body)
+			});
 			round += 1;
 			if (round === 1) {
 				// First turn: tool_use add_note({text:"test"})
@@ -52,7 +65,7 @@ await page.evaluate(() => {
 						id: 'msg_test_1',
 						type: 'message',
 						role: 'assistant',
-						model: 'claude-sonnet-4-6',
+						model: 'claude-sonnet-5-5',
 						stop_reason: 'tool_use',
 						content: [
 							{ type: 'text', text: 'Adding a note for you.' },
@@ -73,7 +86,7 @@ await page.evaluate(() => {
 					id: 'msg_test_2',
 					type: 'message',
 					role: 'assistant',
-					model: 'claude-sonnet-4-6',
+					model: 'claude-sonnet-5-5',
 					stop_reason: 'end_turn',
 					content: [{ type: 'text', text: 'Done — added the note.' }]
 				}),
@@ -99,7 +112,7 @@ console.log('mode indicator: OK ("using Claude")');
 // Pick a preset so datasetStore has content for the system prompt.
 await page.evaluate(() => {
 	const btn = [...document.querySelectorAll('button')].find((b) =>
-		b.textContent?.includes('Basic Usage')
+		b.textContent?.includes('Materials — Uniaxial')
 	);
 	btn?.click();
 });
@@ -125,6 +138,10 @@ await page.waitForTimeout(1500);
 // 4) Verify a note block was added and two API round-trips happened.
 const blocksAfter = await page.locator('main article').count();
 const fetchRounds = await page.evaluate(() => window.__fetchCalls?.length ?? 0);
+const requestShape = await page.evaluate(() => window.__fetchCalls ?? []);
+const requestOk =
+	requestShape.length > 0 &&
+	requestShape.every((c) => c.model === 'claude-sonnet-5-5' && c.effort === 'low' && c.rejected.length === 0);
 const types = await page.evaluate(() => {
 	const blocks = JSON.parse(localStorage.getItem('paramaterial:blocks:v1') ?? '{}');
 	return (blocks.blocks ?? []).map((b) => b.type);
@@ -150,6 +167,7 @@ const noteText = await page.evaluate(() => {
 	return n?.config?.text ?? '';
 });
 if (noteText !== 'test') fail(`expected note.config.text === "test", got "${noteText}"`);
+if (!requestOk) fail(`request shape wrong for Claude Sonnet 5.5: ${JSON.stringify(requestShape)}`);
 
 // 5) Restore original fetch.
 await page.evaluate(() => {
@@ -164,7 +182,7 @@ if (realErrors.length) {
 
 console.log(
 	JSON.stringify(
-		{ blocksBefore, blocksAfter, types, fetchRounds, lastAsst, noteText, pass: true },
+		{ blocksBefore, blocksAfter, types, fetchRounds, lastAsst, noteText, requestShape, pass: true },
 		null,
 		2
 	)

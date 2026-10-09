@@ -9,6 +9,7 @@
 	// the correct state on the first paint (avoids a flash of "signed out").
 	$effect(() => {
 		sessionStore.setUser(data.user ?? null);
+		sessionStore.setAllowSignup(data.allowSignup ?? true);
 	});
 </script>
 

@@ -5,7 +5,7 @@ const page = await ctx.newPage();
 page.on('console', (m) => console.log(`[${m.type()}]`, m.text()));
 page.on('pageerror', (e) => console.log(`[pageerror]`, e.message));
 await page.goto('http://localhost:8080/');
-await page.click('button:has-text("Basic Usage")');
+await page.click('button:has-text("Materials — Uniaxial")');
 await page.waitForURL('**/prepare');
 await page.waitForTimeout(2500);
 

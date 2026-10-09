@@ -281,7 +281,7 @@ async function sendViaClaude(userText: string) {
 			system,
 			messages: apiMessages,
 			tools: TOOL_SCHEMAS,
-			max_tokens: 1024
+			max_tokens: 4096
 		});
 
 		// Collect any text the model emitted and append its full content block as
@@ -295,6 +295,9 @@ async function sendViaClaude(userText: string) {
 		}
 		if (textParts.length) finalText = textParts.join('\n\n').trim();
 
+		if (res.stop_reason === 'refusal' && !finalText) {
+			finalText = 'Claude declined this request. Try rephrasing it as an analysis step.';
+		}
 		if (res.stop_reason !== 'tool_use' || toolUses.length === 0) {
 			// Model is done.
 			break;

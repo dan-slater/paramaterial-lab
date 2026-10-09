@@ -1,3 +1,4 @@
+import { readJson } from '$lib/server/body';
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createProject, listProjectsForUser } from '$lib/server/projects';
@@ -9,7 +10,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!locals.user) throw error(401, 'Not signed in');
-	const body = (await request.json().catch(() => ({}))) as {
+	const body = (await readJson(request)) as {
 		name?: string;
 		description?: string;
 	};

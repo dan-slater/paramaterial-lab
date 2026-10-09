@@ -81,6 +81,9 @@ async function call(method, path, body) {
 function assert(cond, label) {
 	if (!cond) {
 		console.error(`FAIL: ${label}`);
+		// process.exit skips the .finally() below, so stop the server here or it
+		// is orphaned on the port.
+		server?.kill('SIGKILL');
 		process.exit(1);
 	}
 	console.log(`ok   ${label}`);

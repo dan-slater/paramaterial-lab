@@ -1,4 +1,4 @@
-import type { Dataset } from '$lib/datasets';
+import { PRESET_DATASETS, type Dataset } from '$lib/datasets';
 import { loadJSON, STORAGE_KEYS } from './persistence';
 import { blocksStore } from './blocks.svelte';
 
@@ -75,6 +75,10 @@ export const datasetStore = {
 			if (!res.ok) throw new Error(`Failed to load ${id}: ${res.status}`);
 			const ds = (await res.json()) as Dataset;
 			if (mine !== generation) return;
+			// Show the curated preset name (the one on the picker card) rather than
+			// whatever name the builder baked into the JSON.
+			const preset = PRESET_DATASETS.find((p) => p.id === ds.id);
+			if (preset) ds.name = preset.name;
 			state.current = ds;
 			state.needsReupload = false;
 			syncPickerConfig(state.current);

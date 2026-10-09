@@ -10,7 +10,7 @@ export interface Me {
 	displayName: string;
 }
 
-const state = $state<{ user: Me | null }>({ user: null });
+const state = $state<{ user: Me | null; allowSignup: boolean }>({ user: null, allowSignup: true });
 
 export const sessionStore = {
 	get user() {
@@ -18,6 +18,13 @@ export const sessionStore = {
 	},
 	setUser(u: Me | null) {
 		state.user = u;
+	},
+	/** Whether the server accepts new accounts (ALLOW_SIGNUP). */
+	get allowSignup() {
+		return state.allowSignup;
+	},
+	setAllowSignup(v: boolean) {
+		state.allowSignup = v;
 	},
 	async refresh() {
 		try {
