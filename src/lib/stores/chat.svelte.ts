@@ -1,5 +1,6 @@
 import { blocksStore, TOOLS, type BlockType } from './blocks.svelte';
 import { datasetStore } from './dataset.svelte';
+import { getSeriesLabels } from '$lib/analyzers/registry';
 import { loadJSON, saveJSONDebounced, STORAGE_KEYS } from './persistence';
 import {
 	callClaude,
@@ -24,13 +25,25 @@ interface PersistedShape {
 	messages: ChatMessage[];
 }
 
+const WELCOME_PREFIX = 'Hi — I can add analysis blocks to the report.';
+
 const welcomeMessage = (): ChatMessage => ({
 	id: 'welcome',
 	role: 'assistant',
-	text:
-		'Hi — I can add analysis blocks to the report. Try: "plot stress vs strain", "find UTS and proof stress", "show representative curves by temperature".',
+	text: WELCOME_PREFIX,
 	ts: Date.now()
 });
+
+/** The greeting's example prompts follow the loaded dataset's domain, so they are
+ *  filled in at render time rather than stored with the message. */
+export function displayText(m: ChatMessage): string {
+	if (m.id !== 'welcome' || !m.text.startsWith(WELCOME_PREFIX)) return m.text;
+	const labels = getSeriesLabels(datasetStore.current);
+	const tries = labels.offsetLine
+		? ['plot stress vs strain', 'find UTS and proof stress', 'show representative curves by temperature']
+		: [labels.chatHint, 'add the parameters table', 'scatter two parameters'];
+	return `${WELCOME_PREFIX} Try: ${tries.map((t) => `"${t}"`).join(', ')}.`;
+}
 
 function hydrate(): ChatMessage[] {
 	const saved = loadJSON<PersistedShape>(STORAGE_KEYS.chat);

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { chatStore } from '$lib/stores/chat.svelte';
+	import { chatStore, displayText } from '$lib/stores/chat.svelte';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import { getSeriesLabels } from '$lib/analyzers/registry';
 	import ApiKeyModal from './ApiKeyModal.svelte';
@@ -141,7 +141,7 @@
 								? 'border: 1px solid rgb(150 40 40 / 0.5); background: rgb(100 20 20 / 0.25); color: #fca5a5;'
 								: 'background: var(--surface-card); color: var(--text-primary);'}
 					>
-						{@html formatText(m.text)}
+						{@html formatText(displayText(m))}
 					</div>
 				</div>
 			</div>
