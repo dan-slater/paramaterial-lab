@@ -33,8 +33,9 @@ const PICKS = [
 	['USW00023183', 'PHX',    'USA'],
 	['USW00014922', 'MSP',    'USA'],
 	['USW00026451', 'ANC',    'USA'],   // Anchorage
-	['CA001108395', 'YVR',    'CAN'],
-	['CA007025250', 'YUL',    'CAN'],   // Montreal Pierre-Elliott-Trudeau (Quebec prov.)
+	// NOAA renamed the Canadian IDs from CA00xxxxxxx to CAN0xxxxxxx (seen 2026-10).
+	['CAN01108395', 'YVR',    'CAN'],   // Vancouver Intl A (was CA001108395)
+	['CAN07025250', 'YUL',    'CAN'],   // Montreal Pierre-Elliott-Trudeau (was CA007025250)
 	['MXM00076680', 'MEX',    'MEX'],
 	['UKM00003772', 'LHR',    'GBR'],
 	['UK000003005', 'LWK',    'GBR'],   // Lerwick (UK, not UKM)
@@ -98,6 +99,11 @@ async function fetchGzCsv(url, cacheName) {
 	return gunzipSync(buf).toString('utf8');
 }
 
+// Elevations to use where ghcnd-stations.txt has none (it writes -999.9).
+// AYW00090001 Amundsen-Scott South Pole Station: 2835 m, the station record
+// (WMO 89009, US Antarctic Program).
+const ELEV_OVERRIDE_M = { AYW00090001: 2835 };
+
 // ---- parse ghcnd-stations.txt (fixed-width) ----
 // Format:
 //   0-10  ID (11 chars)
@@ -118,7 +124,7 @@ function parseStations(text) {
 		if (!id || Number.isNaN(lat) || Number.isNaN(lon)) continue;
 		// ghcnd-stations.txt writes -999.9 for an unknown elevation (Amundsen-Scott).
 		const known = Number.isFinite(elev) && elev > -999;
-		idx.set(id, { id, lat, lon, elev: known ? elev : null, name });
+		idx.set(id, { id, lat, lon, elev: known ? elev : (ELEV_OVERRIDE_M[id] ?? null), name });
 	}
 	return idx;
 }

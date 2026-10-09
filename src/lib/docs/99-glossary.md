@@ -164,7 +164,7 @@ Count of days above (below) a threshold, computed by `extremeHotDays(series, thr
 How far a station is from the moderating influence of the ocean, and so how large its seasonal swing is for its latitude. Not a field in the dataset; the climate chapter uses it to explain why seasonal amplitude correlates only loosely with latitude.
 
 ### Altitude
-Station elevation in metres, `meta.altitude_m`. Lowers *annual mean* through the lapse rate; metadata, not an analyzer output. Amundsen–Scott carries GHCN's missing-value sentinel (−1000) in the shipped JSON.
+Station elevation in metres, `meta.altitude_m`. Lowers *annual mean* through the lapse rate; metadata, not an analyzer output. GHCN has no elevation for Amundsen–Scott; the builder fills in the station record, 2 835 m.
 
 ### Hemisphere
 The `'N'` / `'S'` flag on each climate station's `meta`, used by `summerAnomaly` to decide which bins count as summer. Defaults to `'N'` when missing.

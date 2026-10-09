@@ -21,7 +21,7 @@ The preset contains **30 stations**, retained out of 41 hand-picked GHCN-Daily I
 
 The element used is `TAVG`, GHCN's daily mean temperature, reported in tenths of °C, divided by ten and rounded to 0.1 °C on output. Missing days are linearly interpolated across gaps of ≤7 days; stations with <95 % coverage post-interpolation are dropped. **QC caveat:** `TAVG` is not always a directly-measured 24-hour average, and some stations do not report it at all. The build script falls back to `(TMAX + TMIN)/2` on days when `TAVG` is absent but `TMAX` and `TMIN` are both present, and records the per-station fraction as `meta.tavg_derived_pct`. On this build, eight stations are 100 % derived (the seven US stations and Berlin–Tempelhof); the rest are at or near 0 %. The two definitions agree to within a few tenths of a degree on monthly and annual means, but `(TMAX+TMIN)/2` has slightly higher day-to-day variance and a small positive bias under strong diurnal asymmetry (e.g., clear desert nights). This affects the noise in trends and extreme-day counts, not annual means or seasonal amplitudes at the aggregate level.
 
-**Metadata caveat.** `altitude_m` for Amundsen–Scott is −1000 in the shipped JSON. That is GHCN's −999.9 "unknown elevation" sentinel, rounded; the station actually sits at about 2 835 m. The builder now writes `null` for the sentinel, so the next rebuild fixes it. Until then, drop that station from any altitude scatter.
+**Metadata note.** GHCN's station index has no elevation for Amundsen–Scott (it writes the −999.9 "unknown" sentinel). The builder fills that gap from the station record, 2 835 m, so `altitude_m` is real for all 30 stations. NOAA has also renamed the Canadian IDs (`CA00…` → `CAN0…`); Vancouver is now read from `CAN01108395`, whose record differs slightly from the old ID's.
 
 All numbers in this chapter are computed by `node scripts/chapter-numbers.mjs` from the shipped `static/data/climate.json`. Correlations against |latitude| are computed there, because the UI has no |latitude| field (see Limitations).
 
@@ -58,7 +58,7 @@ T(t) = a + b·t + c·cos(ωt) + d·sin(ωt),     ω = 2π / 365,  t = day index
 
 by ordinary least squares: it builds the 4×4 normal equations on the columns `[1, t, cos ωt, sin ωt]` and solves them by Gauss–Jordan elimination with partial pivoting (returning a zero fit if any pivot falls below 10⁻¹²). It returns the coefficients, the seasonal amplitude `√(c² + d²)`, the phase `atan2(d, c)`, the peak day (phase / ω wrapped into [0, 365)), and R². Two scalars are registered:
 
-- **`harmonicAmplitude`** (`HarmAmp`, °C) — the fitted `√(c² + d²)`. It agrees closely with the binned `seasonalAmplitude` (r = +0.997 across the 30 stations; median 7.5 °C against 7.9 °C), but it uses every day rather than 12 bin means.
+- **`harmonicAmplitude`** (`HarmAmp`, °C) — the fitted `√(c² + d²)`. It agrees closely with the binned `seasonalAmplitude` (r = +0.996 across the 30 stations; median 7.5 °C against 7.9 °C), but it uses every day rather than 12 bin means.
 - **`harmonicTrendPerYear`** (`HarmTrend`, °C/yr) — `b · 365`. Because the seasonal cycle is fitted jointly, the slope no longer absorbs it: the median drops from +0.84 °C/yr (plain OLS) to +0.17 °C/yr, and the range narrows to −0.57 … +1.08 °C/yr.
 
 The fit explains a median 74 % of daily variance (R² 0.32 at the most weather-dominated station, 0.94 at the most seasonal). Its limits: a single annual harmonic cannot represent a skewed cycle (a short sharp winter, a long flat summer), so some seasonal shape still leaks into `b`; and three years is far too short for `b` to be a climate trend at any one station.
@@ -109,7 +109,6 @@ The dataset is real, small and short. Specific limitations:
 - **Temperature only.** No precipitation, humidity or wind, so Köppen-style classification cannot be recovered from the record. There is no `climate_zone` field; the zones named above are this chapter's informal grouping.
 - **No |latitude| field.** The scatter can only use metadata the JSON carries, and the JSON carries signed latitude.
 - **Pseudo-month bins.** `seasonalAmplitude` and `summerAnomaly` bin from the first day of the record, not from 1 January.
-- **One bad metadata value.** Amundsen–Scott's `altitude_m` is a missing-value sentinel until the next rebuild.
 
 Concrete extensions a student could implement:
 

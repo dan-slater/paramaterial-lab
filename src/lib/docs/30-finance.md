@@ -52,20 +52,18 @@ extension.
 
 **v0.2 change.** The `finance` preset is no longer synthetic. The seeded
 geometric-Brownian-motion generator that produced v0.1 has been removed and
-replaced with **real daily adjusted-close prices** fetched from
-[Stooq](https://stooq.com) by `scripts/build-finance.mjs`. Stooq publishes
-per-ticker daily CSVs under
-`https://stooq.com/q/d/l/?s=<ticker>.us&i=d`; the `Close` column is already
-split- and dividend-adjusted for US equities, so no further adjustment is
-applied downstream. If Stooq is unreachable or gated (it now requires a
-free apikey), the script falls back to the Yahoo chart endpoint
-(`query1.finance.yahoo.com/v8/finance/chart/...`), which returns an
-equivalent `adjclose` series.
+replaced with **real daily adjusted-close prices** from **Yahoo Finance**,
+fetched by `scripts/build-finance.mjs` from the chart endpoint
+(`query1.finance.yahoo.com/v8/finance/chart/<TICKER>?range=3y&interval=1d`).
+Its `adjclose` series is split- and dividend-adjusted, so no further
+adjustment is applied downstream. The script can also read Stooq
+(`https://stooq.com/q/d/l/?s=<ticker>.us&i=d`) when given a `STOOQ_APIKEY`,
+but the shipped snapshot is Yahoo's, and `provenance.source` in the JSON
+says so.
 
-**Licence and usage.** Stooq's data is distributed free for personal and
-research use; commercial redistribution requires their permission
-(see `https://stooq.com/terms/`). The dataset here is a snapshot for
-method demonstration, not a re-distributed commercial feed.
+**Licence and usage.** Yahoo Finance data is for personal, non-commercial
+use under Yahoo's terms. The dataset here is a small snapshot for method
+demonstration, not a redistributed commercial feed.
 
 **Ticker universe.** 40 US-listed large-caps across eight sectors —
 Technology (7), Healthcare (6), Energy (5), Financials (5), Consumer (5),
@@ -79,8 +77,8 @@ all absent by construction.
 
 **Time range and alignment.** The script fetches ~3 years of daily rows per
 ticker, intersects the date sets, and keeps the latest **504 common
-business days** (≈ 2 calendar years). The window therefore ends at the
-most recent Stooq/Yahoo close and slides forward on every rebuild. Every
+business days** (≈ 2 calendar years) ending on or before `FINANCE_END`,
+pinned to 2026-04-21 so a rebuild reproduces the shipped window. Every
 retained ticker shares the same 504-day aligned index.
 
 **Adjustments.** Adjusted close already folds in splits and dividends, so
@@ -99,10 +97,10 @@ the tool, it is +0.48 (see Recoverable relationships).
 
 **Numbers in this chapter.** Every quantitative claim below is computed by
 `node scripts/chapter-numbers.mjs` from the shipped `static/data/finance.json`,
-built 2026-04-22 from Yahoo Finance (Stooq had become key-gated, so the
-builder fell back; `generator_note` in the JSON records which source was
-used). The window is 504 aligned business days, 2024-04-17 → 2026-04-21.
-The numbers are specific to that window and move on every rebuild.
+rebuilt 2026-10-09 from Yahoo Finance (`provenance` in the JSON records the
+source, endpoint and window). The window is 504 aligned business days,
+2024-04-17 → 2026-04-21. The numbers are specific to that window; moving
+`FINANCE_END` moves them.
 
 ## First-moment analyzers
 

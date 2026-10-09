@@ -55,7 +55,7 @@ export const PRESET_DATASETS: DatasetInfo[] = [
 		name: 'Finance — Daily Adjusted Closes',
 		description: '40 US large-cap tickers across 8 sectors, 504 trading days (Apr 2024 – Apr 2026).',
 		tests: 40,
-		source: 'yahoo / stooq',
+		source: 'Yahoo Finance',
 		domain: 'finance',
 		headline: true,
 		template: 'finance-overview'

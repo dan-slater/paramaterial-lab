@@ -335,7 +335,7 @@ Returns the zero fit for n < 4. Fitting the cycle jointly with the trend is what
 
 ### `harmonicAmplitude`
 
-`fitHarmonicTrend(series).amplitude`, in °C. Registered as `HarmAmp`. Agrees with the binned `seasonalAmplitude` to r = +0.997 on the shipped preset, but uses every day instead of 12 bin means.
+`fitHarmonicTrend(series).amplitude`, in °C. Registered as `HarmAmp`. Agrees with the binned `seasonalAmplitude` to r = +0.996 on the shipped preset, but uses every day instead of 12 bin means.
 
 ### `harmonicTrendPerYear`
 

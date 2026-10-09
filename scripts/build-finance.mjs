@@ -25,6 +25,10 @@ const TARGET_DAYS = 504;
 const FETCH_DELAY_MS = 250;
 const STOOQ_APIKEY = process.env.STOOQ_APIKEY || '';
 const FORCE_SOURCE = process.env.FINANCE_SOURCE || ''; // 'stooq' | 'yahoo' | ''
+// Last trading day of the window. Pinned so a rebuild reproduces the shipped
+// window (and the chapter numbers) instead of sliding to today; Yahoo's range=3y
+// covers it until about 2027-04. Override with FINANCE_END=YYYY-MM-DD.
+const END_DATE = process.env.FINANCE_END || '2026-04-21';
 
 // Ticker universe: 40 tickers across 8 sectors. Sector buckets match the
 // v0.1 synthetic preset so chapter prose about sector clustering still reads.
@@ -154,6 +158,12 @@ async function pickSource() {
   }
 }
 
+const SOURCE_NAME = { yahoo: 'Yahoo Finance', stooq: 'Stooq' };
+const SOURCE_URL = {
+  yahoo: 'https://query1.finance.yahoo.com/v8/finance/chart/<TICKER>?range=3y&interval=1d',
+  stooq: 'https://stooq.com/q/d/l/?s=<ticker>.us&i=d'
+};
+
 function alignOnCommonDates(perTicker) {
   // Intersect date sets across all tickers, take the last TARGET_DAYS.
   const tickers = Object.keys(perTicker);
@@ -163,7 +173,7 @@ function alignOnCommonDates(perTicker) {
     const s = new Set(perTicker[tickers[i]].map((r) => r.date));
     common = new Set([...common].filter((d) => s.has(d)));
   }
-  const dates = [...common].sort();
+  const dates = [...common].filter((d) => d <= END_DATE).sort();
   const trimmed = dates.slice(-TARGET_DAYS);
   const dateSet = new Set(trimmed);
   const byTicker = {};
@@ -247,12 +257,20 @@ async function main() {
 
   const dataset = {
     id: 'finance',
-    name: `Finance — Daily Stock Returns (${source === 'yahoo' ? 'Yahoo Finance' : 'Stooq'})`,
-    description: `Real adjusted-close prices for ${tests.length} US equities across 8 sectors, pulled from ${source === 'yahoo' ? 'Yahoo Finance' : 'Stooq'}.`,
+    name: `Finance — Daily Stock Returns (${SOURCE_NAME[source]})`,
+    description: `Real adjusted-close prices for ${tests.length} US equities across 8 sectors, pulled from ${SOURCE_NAME[source]}.`,
     domain: 'finance',
     x_label: 'trading day',
     y_label: 'Adjusted close (USD)',
     info_columns: ['test_id', 'sector', 'country', 'industry_group'],
+    provenance: {
+      source: SOURCE_NAME[source],
+      url: SOURCE_URL[source],
+      field: source === 'yahoo' ? 'indicators.adjclose (split and dividend adjusted)' : 'Close (adjusted server-side)',
+      fetched_at: new Date().toISOString(),
+      window: { start: dateFirst, end: dateLast, days: dates.length },
+      failed_tickers: failed
+    },
     generator_note: `Built ${new Date().toISOString()} from source=${source}. Aligned on ${dates.length} common business days from ${dateFirst} to ${dateLast}. Failed tickers: ${failed.join(',') || 'none'}.`,
     tests
   };
