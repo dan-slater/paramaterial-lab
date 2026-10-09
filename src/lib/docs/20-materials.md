@@ -84,8 +84,9 @@ x-axis of the final scatter: lot, test-type, rate.
 `info/01 prepared info.xlsx` plus one CSV per specimen with columns `Strain`,
 `Stress_MPa`. Nine lots (A–I), six nominal temperatures (20, 100, 150, 200,
 250, 300 °C), two test types — uniaxial tension (`T`) and plane-strain
-tension (`P`). All tests at 8.66 × 10⁻⁴ /s. Specimen geometry and alloy
-identity are not recorded; **source unknown** (notebook does not cite).
+tension (`P`). All tests at 8.66 × 10⁻⁴ /s. The alloy is AA6061-T651. Source:
+Aakash, Connors & Shields (2019), published on Mendeley Data
+([doi:10.17632/rd6jm9tyb6.2](https://doi.org/10.17632/rd6jm9tyb6.2)).
 
 ### The research question
 
@@ -171,7 +172,8 @@ Blocks:
 restricted to lots A–E (PST and lots F–I dropped). Filenames encode test type,
 temperature, lot, replicate, and three trailing IDs, e.g. `T_020_A_1_001_022_
 03.csv`. All tests at 8.66 × 10⁻⁴ /s, `A_0 = 40.32 mm`, `h_0 = 3.175 mm`. Same
-six-point temperature grid as basic-usage. **Source unknown**.
+six-point temperature grid as basic-usage. Source: Aakash, Connors & Shields
+(2019), the same dataset as basic-usage.
 
 ### The research question
 
@@ -251,7 +253,8 @@ Blocks:
 (`UT` and `PST`). Same rate (8.66 × 10⁻⁴ /s). Temperatures span 20, 150, 200,
 250, 300 °C — 100 °C is silently dropped (notebook comment `#??`).
 Geometry is asymmetric: `A_0 = 40.32 mm` for UT, 20.16 mm for PST, thickness
-3.175 mm. **Source unknown**.
+3.175 mm. Source: Aakash, Connors & Shields (2019), the same dataset as
+basic-usage.
 
 ### The research question
 
@@ -341,12 +344,13 @@ Blocks:
 ### Provenance
 
 70 hot uniaxial compression (`UC`) tests from `dan_msc_cs3_0.1.0`, run on the
-Baron thermomechanical simulator. Three materials (`AC`, `H560`, `H580` —
-aluminium-alloy temper variants) at six temperatures (300, 330, 360, 400, 450,
+Gleeble 3800 thermomechanical simulator at the Centre for Materials Engineering
+(CME), University of Cape Town. The alloy is AA3104 in three states: as-cast
+(`AC`), and homogenised at 560 °C (`H560`) and 580 °C (`H580`), at six temperatures (300, 330, 360, 400, 450,
 500 °C) and two rates (1 and 10 /s). Cylindrical specimens, `L_0 = 15 mm`,
 `D_0 = 10 mm`. Data files are 12-column (time, force, jaw, thermocouple TC1,
-σ, ε, plus machine diagnostics). Test IDs `baron_test_###` identify the
-Baron simulator. **Source unknown** for publication.
+σ, ε, plus machine diagnostics). Source: Shanle Baron (2018), a Hulamin
+progress report from UCT; test IDs `baron_test_###` refer to that report.
 
 ### The research question
 
@@ -419,12 +423,13 @@ Blocks:
 ### Provenance
 
 40 plane-strain compression (PSC) tests from `dan_msc_cs4_0.1.0`, run on the
-Hyde machine at the same lab as CS3. Single material `TB` at three
+same Gleeble 3800 at CME as CS3. Single material `TB` (AA3104 transfer bar) at three
 temperatures (300, 350, 400 °C) and three rates (10, 30, 100 /s) — an order
 of magnitude faster than CS3. Two specimen sizes: `PSC` (smaller) and
 `PSC*` (larger, `b_0 = 60 mm`, `L_0 = 10 mm`, `h_0 = 60 mm`, `w = 12.5 mm`).
 Friction/geometry corrections Ascale = Bscale = 0.866 recorded in the info
-table. **Source unknown**.
+table. Source: Hyde (2015), an MSc thesis at UCT, which also defines the two
+specimen geometries.
 
 ### The research question
 
@@ -593,17 +598,22 @@ expressible without touching source today.
   Committee for Aeronautics, Washington, D.C.
 - Zener, C. & Hollomon, J. H. (1944). Effect of strain rate upon plastic
   flow of steel. *Journal of Applied Physics* 15, 22–32.
-- Baron, A. A. (2005). *Thermomechanical simulator data and constitutive
-  modelling of aluminium alloys.* Internal report; CS3's `baron_test_###`
-  files are attributed to this simulator but no published citation is
-  currently available — placeholder pending confirmation.
-- Hyde, T. R. (colleague of Baron at the same lab). *Plane-strain
-  compression rig documentation.* Internal lab note; referenced in CS4 as
-  the source of the PSC/PSC* specimen definitions and the Ascale/Bscale
-  friction corrections. Placeholder pending confirmation.
-- Aakash (MSc thesis, redistributed as `aakash results.xlsx` in
-  `dan-slater/paramaterial-examples`). Hand-curated tensile-properties
-  reference used as the Basic Usage cross-check.
-- Slater, D. (2023). *paramaterial: a Python library for parameterised
-  materials-property analysis.* MSc thesis; companion notebooks at
-  `github.com/dan-slater/paramaterial-examples`.
+- Aakash, B., Connors, J. & Shields, M. D. (2019). Stress–strain data for
+  aluminum 6061-T651 from 9 lots at 6 temperatures under uniaxial and plane
+  strain tension. *Data in Brief* 25, 104085.
+  [doi:10.1016/j.dib.2019.104085](https://doi.org/10.1016/j.dib.2019.104085).
+  Data: Mendeley Data,
+  [doi:10.17632/rd6jm9tyb6.2](https://doi.org/10.17632/rd6jm9tyb6.2).
+  Source of basic-usage, CS1 and CS2. The Basic Usage cross-check compares
+  against this paper's reported properties, redistributed as
+  `aakash results.xlsx` in `dan-slater/paramaterial-examples`.
+- Shanle Baron, S. G. (2018). *Hulamin Progress Report.* Technical report,
+  University of Cape Town. Source of the CS3 uniaxial compression data.
+- Hyde, C. K. (2015). *Critical analysis of simulated thermomechanical
+  processing of aluminium can body stock.* MSc thesis, University of Cape
+  Town. [hdl:11427/15749](http://hdl.handle.net/11427/15749). Source of the
+  CS4 plane-strain compression data and specimen geometries.
+- Slater, D. (2023). *Development of open-source software for repeatable
+  processing of mechanical test data.* MSc thesis, University of Cape Town.
+  [hdl:11427/39860](http://hdl.handle.net/11427/39860). Companion notebooks
+  at `github.com/dan-slater/paramaterial-examples`.

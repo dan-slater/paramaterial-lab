@@ -32,6 +32,34 @@ chapter per domain, reproducibility notes and a glossary. Every number the
 chapters quote is computed by `scripts/chapter-numbers.mjs` from the shipped
 data, not typed in by hand.
 
+## Data sources
+
+The presets are re-encodings of published data. Please cite the original
+source if you use a preset's numbers.
+
+- **Materials, basic-usage, CS1 and CS2:** Aakash, B., Connors, J. & Shields,
+  M. D. (2019). Stress–strain data for aluminum 6061-T651 from 9 lots at 6
+  temperatures under uniaxial and plane strain tension. *Data in Brief* 25,
+  104085. <https://doi.org/10.1016/j.dib.2019.104085>. Data:
+  <https://doi.org/10.17632/rd6jm9tyb6.2>.
+- **Materials, CS3:** Shanle Baron, S. G. (2018). *Hulamin Progress Report.*
+  Technical report, University of Cape Town. AA3104 uniaxial compression on
+  the Gleeble 3800 at the Centre for Materials Engineering.
+- **Materials, CS4:** Hyde, C. K. (2015). *Critical analysis of simulated
+  thermomechanical processing of aluminium can body stock.* MSc thesis,
+  University of Cape Town. <http://hdl.handle.net/11427/15749>.
+- **Finance:** daily adjusted closes from Yahoo Finance.
+- **Climate:** Menne, M. J. et al. (2012). An overview of the Global
+  Historical Climatology Network-Daily database. *Journal of Atmospheric and
+  Oceanic Technology* 29, 897–910. Data from NOAA NCEI.
+- **Battery (experimental):** Severson, K. A. et al. (2019). Data-driven
+  prediction of battery cycle life before capacity degradation. *Nature
+  Energy* 4, 383–391.
+
+The materials case studies come from Slater, D. (2023). *Development of
+open-source software for repeatable processing of mechanical test data.* MSc
+thesis, University of Cape Town. <http://hdl.handle.net/11427/39860>.
+
 ## Import your own CSV
 
 The dataset picker takes one or more CSV files. They are parsed in the browser

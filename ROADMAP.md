@@ -37,5 +37,4 @@ What ships now, and what comes next in small releases. Each stage leads with wha
 
 ## Open, not yet scheduled
 
-- Full citations for the Baron and Hyde data sources in the materials chapter. They are placeholders until the thesis reference table is checked.
 - A recorded walk-through of the overview's quick-start.
