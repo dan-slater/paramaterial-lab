@@ -1,10 +1,11 @@
-# Deploying the lab to the server
+# Deploying the lab to a server
 
-Target: `https://paramaterial.danielslater.dev` → Cloudflare → the server (Ubuntu,
-SERVER_IP) → `node build` on `127.0.0.1:3080`, run by a systemd **user** unit.
+Target: `https://paramaterial.danielslater.dev` → Cloudflare → a small Ubuntu
+server → `node build` on `127.0.0.1:3080`, run by a systemd **user** unit.
+Below, `SERVER` is the ssh alias of that machine.
 
-The build is made on the Mac, because the preset data (`web/static/data/*.json`,
-about 10 MB) is gitignored and only exists there. `npm run build` copies it into
+The build is made on a workstation, because the preset data (`web/static/data/*.json`,
+about 10 MB) is gitignored and only exists where it was built (`scripts/` rebuilds it). `npm run build` copies it into
 `build/client/data/`, so the server only ever needs `build/`, the two package
 files and its own `node_modules`.
 
@@ -23,10 +24,10 @@ sudo loginctl enable-linger "$USER"   # user units keep running after logout
 sudo apt-get install -y build-essential python3
 ```
 
-## 1. Build on the Mac
+## 1. Build on the workstation
 
 ```bash
-cd web      # or wherever the merged branch lives
+cd web                                         # from a checkout of the repo
 ls static/data/*.json | wc -l                  # expect 8 (basic-usage, cs1-4, finance, climate, battery)
 npm ci
 npm run build
@@ -43,9 +44,9 @@ node scripts/smoke-hosted.mjs
 ## 2. Ship to the server
 
 ```bash
-DEST=the server:apps/paramaterial-lab
-ssh the server 'mkdir -p ~/apps/paramaterial-lab/deploy'
-ssh the server 'cd ~/apps/paramaterial-lab && [ -d build ] && rm -rf build.prev && cp -a build build.prev || true'
+DEST=$SERVER:apps/paramaterial-lab
+ssh "$SERVER" 'mkdir -p ~/apps/paramaterial-lab/deploy'
+ssh "$SERVER" 'cd ~/apps/paramaterial-lab && [ -d build ] && rm -rf build.prev && cp -a build build.prev || true'
 rsync -az --delete build/ "$DEST/build/"
 rsync -az package.json package-lock.json .env.example LICENSE "$DEST/"
 rsync -az deploy/ "$DEST/deploy/"
@@ -72,8 +73,7 @@ and `@node-rs/argon2`. The two native ones:
   `python3`). The binary is tied to the Node major version: **after any Node
   upgrade on the box run `npm rebuild better-sqlite3`**, or the service fails
   with `NODE_MODULE_VERSION … requires NODE_MODULE_VERSION …` the first time it
-  touches the database. (The Mac hit exactly this on 2026-10-09: modules built
-  for Node 24 under Node 26.)
+  touches the database.
 
 Sanity-check both before going further:
 
@@ -154,7 +154,7 @@ curl -sI https://paramaterial.danielslater.dev/lab/materials | head -1
 
 ## Redeploying
 
-Steps 1 and 2 on the Mac, then on the box:
+Steps 1 and 2 on the workstation, then on the server:
 
 ```bash
 cd ~/apps/paramaterial-lab

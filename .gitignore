@@ -12,3 +12,7 @@ data/
 *.db
 *.db-wal
 *.db-shm
+
+# editor state
+.idea/
+.vscode/
