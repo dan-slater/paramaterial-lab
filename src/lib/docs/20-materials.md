@@ -578,8 +578,8 @@ browser without editing source, which is the minimum bar for the
 
 The finance chapter proposes multi-covariate regression against yield
 curves, the climate chapter proposes spatial indexing over
-station–station grids, and the battery chapter proposes time-varying
-metadata for cycle-by-cycle provenance. The materials proposal above is
+station–station grids, and the battery work (held back until the v0.4
+rebuild) needs time-varying metadata for cycle-by-cycle provenance. The materials proposal above is
 the fourth instance of the same diagnosis. The schema and UI are bound
 too tightly to the single-curve abstraction that was natural for tensile
 testing. Each domain extension loosens one axis of that binding —

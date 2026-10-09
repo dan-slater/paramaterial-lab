@@ -38,7 +38,7 @@ The metadata view of a dataset — one row per *test*, one column per `info_colu
 The full crossing of independent variables that defines a dataset's design — for materials, `lot × temperature × rate`; for battery, `chemistry × C-rate × temperature`. Referenced in the domain chapters' Provenance sections to say "N cells across a 4 × 4 × 3 matrix" and similar.
 
 ### Censored cell
-A battery cell whose record ends before it reaches 80 % SoH. `cyclesTo80Pct` returns `null` for these, so they appear as missing rows in the **Parameters** block rather than biasing the scatter toward shorter lives. See battery chapter, Limitations.
+A battery cell whose record ends before it reaches 80 % SoH. `cyclesTo80Pct` returns `null` for these, so they appear as missing rows in the **Parameters** block rather than biasing the scatter toward shorter lives. The battery preset is experimental in v0.2; see `ROADMAP.md` (v0.4).
 
 ## Materials
 

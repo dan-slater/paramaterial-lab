@@ -19,7 +19,7 @@
 		{ id: 'materials', label: 'Materials (stress–strain)' },
 		{ id: 'finance', label: 'Finance (price series)' },
 		{ id: 'climate', label: 'Climate (daily temperature)' },
-		{ id: 'battery', label: 'Battery (capacity vs cycle)' }
+		{ id: 'battery', label: 'Battery (capacity vs cycle, experimental)' }
 	];
 
 	const SAMPLES = [
@@ -164,7 +164,7 @@
 				</p>
 				<p>
 					The analyzer set follows the domain you pick: materials gives UTS, E and proof stress;
-					finance, climate and battery give their own parameters (see the docs).
+					finance and climate give their own parameters (see the docs); battery is experimental.
 				</p>
 			</div>
 		</details>

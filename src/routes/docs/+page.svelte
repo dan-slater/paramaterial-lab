@@ -9,7 +9,7 @@
 	import materials from '$lib/docs/20-materials.md?raw';
 	import finance from '$lib/docs/30-finance.md?raw';
 	import climate from '$lib/docs/40-climate.md?raw';
-	import battery from '$lib/docs/50-battery.md?raw';
+	// 50-battery.md is held back while the battery preset is experimental (ROADMAP v0.4).
 	import reproducibility from '$lib/docs/60-reproducibility.md?raw';
 	import glossary from '$lib/docs/99-glossary.md?raw';
 
@@ -30,7 +30,7 @@
 		return { slug: obj.slug ?? 'section', title: obj.title ?? 'Section' };
 	}
 
-	const sources: string[] = [overview, methodology, materials, finance, climate, battery, reproducibility, glossary];
+	const sources: string[] = [overview, methodology, materials, finance, climate, reproducibility, glossary];
 	const sections: Section[] = sources.map((s) => ({ ...parseMeta(s), source: s }));
 
 	let activeSlug = $state(sections[0].slug);

@@ -57,7 +57,7 @@ Each JSON preserves per-test strain/stress arrays (≤ 2 000 samples per test, d
 
 ## Reproducing a quoted figure
 
-Every "Reproducing in the web tool" section in the domain chapters is a click-path, and each preset has a stable URL that opens it with its report template: `/lab/materials`, `/lab/finance`, `/lab/climate`, `/lab/battery` (and `/lab/cs1` … `/lab/cs4` for the thesis case studies). The app's state is serialised into `localStorage` under the key `paramaterial:blocks:v1`, so after you walk the click-path once you can copy a share link from the Export menu.
+Every "Reproducing in the web tool" section in the domain chapters is a click-path, and each preset has a stable URL that opens it with its report template: `/lab/materials`, `/lab/finance`, `/lab/climate`, `/lab/battery` (experimental, behind a banner; and `/lab/cs1` … `/lab/cs4` for the thesis case studies). The app's state is serialised into `localStorage` under the key `paramaterial:blocks:v1`, so after you walk the click-path once you can copy a share link from the Export menu.
 
 When you load a preset, the following happens:
 
@@ -75,5 +75,5 @@ Because all computation is client-side and `scripts/chapter-numbers.mjs` imports
 
 ## Changelog
 
-- **v0.2** (2026-10-09) — finance, climate and battery presets switched from seeded synthetic generators to real data (Yahoo Finance equities, NOAA GHCN-Daily, Severson 2019); new analyzers `rollingVolatility`, `ewmaVolatility`, `volClusteringIndex` (finance), `fitHarmonicTrend`, `harmonicAmplitude`, `harmonicTrendPerYear` (climate), `fitStretchedExp`, `fadeExponent`, `fadeRateConstant` (battery), with registry rows `VolCluster`, `HarmAmp`, `HarmTrend`, `FadeExp`, `FadeK`; battery units corrected to Ah; `retentionAt` no longer extrapolates past the record; in-browser CSV import; `/lab/<preset>` routes; `scripts/chapter-numbers.mjs` added and every domain-chapter number recomputed from the shipped JSON (closing `SUPERVISOR_REVIEW_4.md` Tier A; self-assessment in `SUPERVISOR_REVIEW_5.md`).
-- **v0.1.0** (2026-04-21) — initial documentation set: overview, methodology, materials (5 case studies), finance, climate, battery, glossary, this page. Two supervisor review passes in-repo as `SUPERVISOR_REVIEW.md` and `SUPERVISOR_REVIEW_2.md`.
+- **v0.2** (2026-10-09) — finance, climate and battery presets switched from seeded synthetic generators to real data (Yahoo Finance equities, NOAA GHCN-Daily, Severson 2019); new analyzers `rollingVolatility`, `ewmaVolatility`, `volClusteringIndex` (finance), `fitHarmonicTrend`, `harmonicAmplitude`, `harmonicTrendPerYear` (climate), `fitStretchedExp`, `fadeExponent`, `fadeRateConstant` (battery), with registry rows `VolCluster`, `HarmAmp`, `HarmTrend`, `FadeExp`, `FadeK`; battery units corrected to Ah; `retentionAt` no longer extrapolates past the record; in-browser CSV import; `/lab/<preset>` routes; `scripts/chapter-numbers.mjs` added and every domain-chapter number recomputed from the shipped JSON (closing Tier A of the fourth AI review pass; the passes are in `reviews/`).
+- **v0.1.0** (2026-04-21) — initial documentation set: overview, methodology, materials (5 case studies), finance, climate, battery, glossary, this page. Two AI-generated review passes (Claude in a supervisor persona) are kept in `reviews/`.

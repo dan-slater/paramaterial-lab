@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PRESET_DATASETS } from '$lib/datasets';
+	import { PRESET_DATASETS, PUBLIC_PRESETS } from '$lib/datasets';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import CsvImportPanel from '$lib/components/CsvImportPanel.svelte';
 
@@ -8,8 +8,8 @@
 	}
 
 	const groups = [
-		{ label: null, items: PRESET_DATASETS.filter((d) => d.headline) },
-		{ label: 'Thesis case studies', items: PRESET_DATASETS.filter((d) => !d.headline) }
+		{ label: null, items: PUBLIC_PRESETS.filter((d) => d.headline) },
+		{ label: 'Thesis case studies', items: PUBLIC_PRESETS.filter((d) => !d.headline) }
 	];
 	const currentPreset = $derived(PRESET_DATASETS.find((d) => d.id === datasetStore.current?.id));
 </script>

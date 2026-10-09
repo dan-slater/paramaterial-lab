@@ -43,7 +43,7 @@
 			class="absolute right-0 z-40 mt-1 w-72 overflow-hidden rounded-md border text-xs"
 			style="background: var(--surface-card); border-color: var(--border-strong); box-shadow: var(--shadow-md);"
 		>
-			{#each REPORT_TEMPLATES as tpl (tpl.id)}
+			{#each REPORT_TEMPLATES.filter((t) => !t.experimental) as tpl (tpl.id)}
 				<button
 					type="button"
 					role="menuitem"

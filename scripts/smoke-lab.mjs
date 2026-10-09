@@ -40,7 +40,7 @@ const PRESETS = [
 	{ slug: 'materials', name: 'Materials — Uniaxial Tension', tests: 154 },
 	{ slug: 'finance', name: 'Finance — Daily Adjusted Closes', tests: 40, json: 'finance' },
 	{ slug: 'climate', name: 'Climate — GHCN-Daily Temperatures', tests: 30, json: 'climate' },
-	{ slug: 'battery', name: 'Battery — Severson 2019 LFP Cycling', tests: 124, json: 'battery' }
+	{ slug: 'battery', name: 'Battery — Severson 2019 LFP Cycling', tests: 124, json: 'battery', experimental: true }
 ];
 for (const p of PRESETS) {
 	const { ctx, page, errors } = await fresh();
@@ -55,6 +55,8 @@ for (const p of PRESETS) {
 	check(scatters >= 4, `/lab/${p.slug} opens its template (${scatters} blocks)`);
 	const link = await page.locator('[data-testid="preset-link"]').getAttribute('href').catch(() => null);
 	check(link === `/lab/${p.slug}`, `/lab/${p.slug} shows its share link (${link})`);
+	const banner = await page.locator('[data-testid="experimental-banner"]').count();
+	check(banner === (p.experimental ? 1 : 0), `/lab/${p.slug} experimental banner ${p.experimental ? 'shown' : 'absent'} (${banner})`);
 	check(errors.length === 0, `/lab/${p.slug} no console errors ${errors.slice(0, 2).join(' | ')}`);
 	// Reload keeps the visitor's blocks (template is not re-applied over their work).
 	await page.evaluate(() => {
@@ -91,6 +93,8 @@ async function importAndRead(page) {
 	const { ctx, page, errors } = await fresh();
 	await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
 	check((await page.locator('[data-testid="csv-import"]').count()) === 1, 'import panel on the picker');
+	const pickerText = await page.locator('article').first().innerText();
+	check(!/Battery/.test(pickerText) && /Finance/.test(pickerText), 'picker lists finance but not the experimental battery preset');
 
 	// Sample button, long format.
 	await page.getByRole('button', { name: '4 climate stations (long)' }).click();

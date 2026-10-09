@@ -29,8 +29,10 @@ export interface DatasetInfo {
 	tests: number;
 	source: string;
 	domain?: Domain;
-	/** One of the four headline presets (materials, finance, climate, battery). */
+	/** A headline preset on the picker (materials, finance, climate). */
 	headline?: boolean;
+	/** Hidden from the pickers; its /lab/<slug> route still works, behind a banner. */
+	experimental?: boolean;
 	/** Report template applied when the preset is opened from its route. */
 	template?: string;
 }
@@ -79,7 +81,7 @@ export const PRESET_DATASETS: DatasetInfo[] = [
 		tests: 124,
 		source: 'Severson et al. 2019',
 		domain: 'battery',
-		headline: true,
+		experimental: true,
 		template: 'battery-overview'
 	},
 	{
@@ -123,6 +125,9 @@ export const PRESET_DATASETS: DatasetInfo[] = [
 		template: 'hot-deformation'
 	}
 ];
+
+/** Presets offered on the picker and the 404 page; experimental ones are left out. */
+export const PUBLIC_PRESETS = PRESET_DATASETS.filter((d) => !d.experimental);
 
 export function presetBySlug(slug: string): DatasetInfo | undefined {
 	return PRESET_DATASETS.find((d) => d.slug === slug);

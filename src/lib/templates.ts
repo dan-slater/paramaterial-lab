@@ -18,6 +18,8 @@ export interface ReportTemplate {
 	name: string;
 	description: string;
 	blocks: TemplateBlockSpec[];
+	/** Left off the template picker; still applied by its preset route. */
+	experimental?: boolean;
 }
 
 export const REPORT_TEMPLATES: ReportTemplate[] = [
@@ -85,6 +87,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
 	{
 		id: 'battery-overview',
 		name: 'Battery overview',
+		experimental: true,
 		description:
 			'Capacity fade coloured by batch, per-cell fade parameters, scatter cycle life vs charge C-rate.',
 		blocks: [
