@@ -1,35 +1,38 @@
 # paramaterial lab
 
-A browser lab for one research move: take a family of series, reduce each one
-to a few scalar parameters, and scatter those parameters against each other or
-against the conditions the series were recorded under. It grew out of
-[paramaterial](https://github.com/dan-slater/paramaterial), a Python package for
-mechanical test data written for an MSc at the University of Cape Town, where
-the series is a stress–strain curve and the scatter is yield stress against
-temperature. The lab runs the same pipeline on three more domains to show that
-the workflow, not the metallurgy, is the reusable part.
+**Live: <https://paramaterial.danielslater.dev>**
 
-You build a report out of blocks (dataset, curve overlay, parameters table,
-parameter scatter, model fits, notes). Every analyzer runs in your browser.
+paramaterial lab is a browser tool for one research move: take a family of
+series, reduce each one to a few scalar parameters, then scatter those
+parameters against each other or against the conditions the series were
+recorded under. It grew out of
+[paramaterial](https://github.com/dan-slater/paramaterial), an MIT-licensed
+Python package for mechanical test data written for an
+[MSc thesis at the University of Cape Town](https://open.uct.ac.za/items/c96a3d0d-5e6a-4670-829a-5b6f1e34cbd7).
+There the series is a stress–strain curve and the scatter is yield stress
+against temperature. The lab runs the same pipeline on finance and climate data
+to show that the workflow, not the metallurgy, is the reusable part. You build a
+report out of blocks (dataset, series plot, parameters table, parameter scatter,
+model fits, notes), and every analyzer runs in your browser.
 
-## The four presets
+## Presets
 
-Each has a shareable URL that opens it with its report template.
+Each preset has a shareable URL that opens it with its report template.
 
 | URL | Data | The plot to look at |
 |---|---|---|
 | `/lab/materials` | 154 uniaxial tension tests, 9 aluminium alloy lots, 20–300 °C (the thesis data) | 0.2 % proof stress vs temperature |
-| `/lab/finance` | 40 US large caps, 8 sectors, 504 trading days of adjusted closes (Yahoo Finance snapshot, Apr 2024 – Apr 2026) | max drawdown vs annualized volatility (r = +0.79) |
-| `/lab/climate` | 30 NOAA GHCN-Daily stations, 3 years of daily mean temperature (Aug 2022 – Aug 2025) | annual mean vs latitude (r = −0.86 against \|latitude\|) |
-| `/lab/battery` | 124 LFP cells from Severson et al. 2019, early-life capacity (cycles 2–100) plus true cycle life | cycle life vs charge C-rate (r = −0.03: it doesn't predict it; batch does) |
+| `/lab/finance` | 40 US large caps, 8 sectors, 504 trading days of adjusted closes (Yahoo Finance, Apr 2024 – Apr 2026) | max drawdown vs annualized volatility |
+| `/lab/climate` | 30 NOAA GHCN-Daily stations, 3 years of daily mean temperature (Aug 2022 – Aug 2025) | annual mean vs latitude |
+| `/lab/battery` (experimental) | 124 LFP cells from Severson et al. 2019, first 100 cycles only | not on the picker or in the docs yet; see the roadmap |
 
 The four thesis case studies are at `/lab/cs1` … `/lab/cs4`. `/docs` has the
 full write-up: a methodology chapter naming every analyzer function, one
 chapter per domain, reproducibility notes and a glossary. Every number the
 chapters quote is computed by `scripts/chapter-numbers.mjs` from the shipped
-data rather than typed in by hand.
+data, not typed in by hand.
 
-## Bring your own CSV
+## Import your own CSV
 
 The dataset picker takes one or more CSV files. They are parsed in the browser
 (`src/lib/csvImport.ts`) into the same shape the presets use, and nothing is
@@ -44,18 +47,18 @@ Any other column with one value per series (temperature, lot, sector, latitude)
 becomes metadata you can colour by or scatter against. Comma, semicolon and tab
 separators are detected; date x columns become days since the first date; with
 no x column the row number is used. You pick which analyzer set applies
-(materials, finance, climate or battery). Two real-data samples live in
-`static/samples/` and are one click away on the import panel.
+(materials, finance or climate; battery is experimental). Two real-data samples
+live in `static/samples/` and are one click away on the import panel.
 
-## The Claude assistant (bring your own key)
+## Chat: bring your own key
 
 The chat pane can drive the report ("plot stress vs strain", "scatter UTS
-against temperature"). It calls the Anthropic Messages API **directly from the
-visitor's browser** with the key they paste into the settings cog. The key is
-kept only in that browser's localStorage (`paramaterial:apikey:v1`); it never
-reaches this server. There is no server-side key, and none should ever be added.
-Without a key the pane falls back to a small rule-based assistant. The model is
-`CLAUDE_MODEL` in `src/lib/claude.ts` (currently `claude-sonnet-5-5`).
+against temperature"). It calls the Anthropic Messages API **directly from your
+browser** with a key you paste into the settings cog. The key stays in that
+browser's localStorage (`paramaterial:apikey:v1`) and never reaches the server.
+The server has no key, and none should ever be added. Without a key the pane
+falls back to a small rule-based assistant. The model is `CLAUDE_MODEL` in
+`src/lib/claude.ts`.
 
 ## Accounts and saved projects
 
@@ -65,21 +68,38 @@ Argon2id; sign-up and sign-in are rate-limited per IP in process; there is no
 email of any kind (so no password reset). Registration can be closed with
 `ALLOW_SIGNUP=false`.
 
-## Running it
+## Run it locally
 
 Requires Node ≥ 20.19 (≥ 23 for the two scripts that import the TypeScript
-analyzers directly: `test-csv-import.mjs` and `chapter-numbers.mjs`).
+analyzers directly: `test-csv-import.mjs` and `chapter-numbers.mjs`). From the
+repository root:
 
 ```bash
 npm ci
 npm run dev                      # http://localhost:5173
 ```
 
-The preset data (`static/data/*.json`, ~10 MB) is gitignored. Rebuild it with
-the scripts described in the Reproducibility chapter
+The preset data (`static/data/*.json`, ~10 MB) is gitignored, so a fresh clone
+has none. Build it with the scripts described in the Reproducibility chapter
 (`node scripts/build-{finance,climate,battery}.mjs`, and
-`scripts/build_data.py` for the materials sets), or copy it from an existing
-checkout.
+`scripts/build_data.py` for the materials sets, which reads a clone of
+[paramaterial-examples](https://github.com/dan-slater/paramaterial-examples)).
+
+## Roadmap
+
+v0.2 ships materials, CSV import, finance and climate. What comes next is
+staged in [`ROADMAP.md`](ROADMAP.md): scatter colour keys (v0.3), battery over
+each cell's full life (v0.4), covariates and the chapter bench in CI (v0.5),
+docs polish (v0.6).
+
+## Licence
+
+Source-available, all rights reserved: see [`LICENSE`](LICENSE). The source is
+published for reference and evaluation; no licence is granted to copy, modify,
+distribute or host it. The [paramaterial](https://github.com/dan-slater/paramaterial)
+Python package is a separate project under the MIT licence.
+
+## Hosting
 
 ### Production build
 
@@ -134,7 +154,7 @@ node scripts/smoke-hosted.mjs    # anonymous use, static data, error page, auth 
 node scripts/smoke-backend.mjs   # accounts, projects, reports, members API
 ```
 
-Screenshots go to `SMOKE_OUT` (set it; the default is a `tmp/` folder outside `web/`).
+Screenshots go to `SMOKE_OUT` (set it; the default is a `tmp/` folder outside the repository).
 
 ## Layout
 
@@ -144,16 +164,11 @@ src/lib/processing.ts    materials analyzers (UTS, E, proof stress, Ramberg–Os
 src/lib/csvImport.ts     in-browser CSV → Dataset
 src/lib/claude.ts        browser-side Claude client (BYO key)
 src/lib/server/          SQLite, auth, rate limits, config (the only server-side code)
-src/lib/docs/            the /docs chapters and the supervisor reviews
+src/lib/docs/            the /docs chapters
+reviews/                 AI-generated review passes (not rendered)
 src/routes/lab/[preset]  shareable preset routes
 src/routes/api/          auth, projects, reports
 scripts/                 data builders, chapter-numbers bench, smokes
 deploy/                  systemd unit + deployment runbook
+ROADMAP.md               staged releases after v0.2
 ```
-
-## Licence
-
-Source-available, all rights reserved: see [`LICENSE`](LICENSE). The source is
-published for reference and evaluation; no licence is granted to copy, modify,
-distribute or host it. The paramaterial Python package is separately licensed
-under MIT.
