@@ -154,6 +154,101 @@ const batteryParams: ParameterDef[] = [
 	}
 ];
 
+/** Wording for the series blocks (plot titles, axis labels, help text). The x/y labels
+ *  come from the dataset when it carries them; the rest is keyed on the domain. An
+ *  imported CSV gets neutral wording built from its column names. */
+export interface SeriesLabels {
+	/** Eyebrow above the series plot, and its palette label. */
+	name: string;
+	/** Series plot heading. */
+	title: string;
+	/** Plural noun for one dataset's series ("curves", "tickers", ...). */
+	noun: string;
+	x: string;
+	y: string;
+	/** Palette help text for the series plot. */
+	toolHint: string;
+	/** Example chat prompt shown in empty states. */
+	chatHint: string;
+	/** The 0.2% offset line only means something for stress-strain curves. */
+	offsetLine: boolean;
+}
+
+type LabelSource = { id?: string; domain?: Domain; x_label?: string; y_label?: string };
+
+const DOMAIN_LABELS: Record<Domain, Omit<SeriesLabels, 'offsetLine'>> = {
+	materials: {
+		name: 'Stress–strain',
+		title: 'All tests: stress vs strain',
+		noun: 'curves',
+		x: 'Strain',
+		y: 'Stress (MPa)',
+		toolHint: 'Plot all tests σ vs ε, color by any metadata field.',
+		chatHint: 'plot stress strain'
+	},
+	finance: {
+		name: 'Price series',
+		title: 'All tickers: adjusted close by trading day',
+		noun: 'tickers',
+		x: 'Trading day',
+		y: 'Adjusted close (USD)',
+		toolHint: 'Plot every ticker’s adjusted close, color by sector or any metadata field.',
+		chatHint: 'plot the price series by sector'
+	},
+	climate: {
+		name: 'Daily temperature',
+		title: 'All stations: daily mean temperature',
+		noun: 'stations',
+		x: 'Day of record',
+		y: 'Daily mean temperature (°C)',
+		toolHint: 'Plot every station’s daily mean temperature, color by hemisphere or any metadata field.',
+		chatHint: 'plot temperature by hemisphere'
+	},
+	battery: {
+		name: 'Capacity fade',
+		title: 'All cells: discharge capacity vs cycle',
+		noun: 'cells',
+		x: 'Cycle number',
+		y: 'Discharge capacity (Ah)',
+		toolHint: 'Plot every cell’s discharge capacity per cycle, color by any metadata field.',
+		chatHint: 'plot capacity fade by batch'
+	},
+	generic: {
+		name: 'Series',
+		title: 'All series: y vs x',
+		noun: 'series',
+		x: 'x',
+		y: 'y',
+		toolHint: 'Plot every series, color by any metadata field.',
+		chatHint: 'plot the series'
+	}
+};
+
+const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+export function getSeriesLabels(ds: LabelSource | null | undefined): SeriesLabels {
+	const domain: Domain = ds?.domain ?? 'materials';
+	const offsetLine = domain === 'materials';
+	if (ds?.id === 'upload') {
+		const x = ds.x_label || 'x';
+		const y = ds.y_label || 'y';
+		return {
+			...DOMAIN_LABELS.generic,
+			title: `All series: ${y} vs ${x}`,
+			x,
+			y,
+			offsetLine
+		};
+	}
+	const base = DOMAIN_LABELS[domain];
+	return {
+		...base,
+		x: ds?.x_label ? capitalise(ds.x_label) : base.x,
+		y: ds?.y_label ? capitalise(ds.y_label) : base.y,
+		offsetLine
+	};
+}
+
 export function getParameterDefs(domain: Domain | undefined): ParameterDef[] {
 	switch (domain) {
 		case 'finance':

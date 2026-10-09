@@ -1,6 +1,16 @@
 <script lang="ts">
 	import { blocksStore, TOOLS, type BlockType } from '$lib/stores/blocks.svelte';
 	import { tick } from 'svelte';
+	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { getSeriesLabels } from '$lib/analyzers/registry';
+
+	// The series plot is named for the loaded dataset's domain.
+	const labels = $derived(getSeriesLabels(datasetStore.current));
+	const tools = $derived(
+		TOOLS.map((t) =>
+			t.type === 'stress-strain' ? { ...t, label: labels.name, description: labels.toolHint } : t
+		)
+	);
 
 	async function addAndScroll(type: BlockType) {
 		const b = blocksStore.add(type);
@@ -19,9 +29,10 @@
 		class="caption-eyebrow shrink-0 self-center pl-2 pr-1"
 		style="font-size: 10px;">Add block</span
 	>
-	{#each TOOLS as t, i}
+	{#each tools as t, i}
 		<button
 			type="button"
+			data-tool={t.type}
 			id={i === 0 ? 'tool-palette-first' : undefined}
 			onclick={() => addAndScroll(t.type)}
 			title={t.description}

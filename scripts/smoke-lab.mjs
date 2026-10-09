@@ -107,11 +107,9 @@ async function importAndRead(page) {
 	h = await importAndRead(page);
 	check(h.includes('tension-single · 1 tests'), `wide file imports 1 series ("${h.slice(0, 80)}")`);
 
-	// Add a stress-strain block and confirm it plots the import.
-	await page.evaluate(() => {
-		const btn = [...document.querySelectorAll('button')].find((b) => b.textContent?.includes('Stress–strain'));
-		btn?.click();
-	});
+	// Add the series block and confirm it plots the import. Its palette label follows
+	// the dataset's domain, so find it by type.
+	await page.locator('[data-tool="stress-strain"]').click();
 	await page.waitForTimeout(800);
 	check((await page.locator('canvas').count()) > 0, 'imported series renders on a plot');
 

@@ -5,6 +5,7 @@
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import { findUplLpl } from '$lib/processing';
 	import { getPlotTheme } from '$lib/plotTheme';
+	import { getSeriesLabels } from '$lib/analyzers/registry';
 
 	interface Props {
 		id: string;
@@ -72,19 +73,20 @@
 		const yPad = (yMax - yMin) * 0.05;
 
 		const t = getPlotTheme();
+		const labels = getSeriesLabels(datasetStore.current);
 		const opts: uPlot.Options = {
 			width: container.clientWidth,
 			height: 360,
 			scales: { x: { time: false }, y: { range: [yMin - yPad, yMax + yPad] } },
 			axes: [
 				{
-					label: 'Strain',
+					label: labels.x,
 					stroke: t.axis,
 					grid: { stroke: t.grid, width: 1 },
 					ticks: { stroke: t.tick }
 				},
 				{
-					label: 'Stress (MPa)',
+					label: labels.y,
 					stroke: t.axis,
 					grid: { stroke: t.grid, width: 1 },
 					ticks: { stroke: t.tick }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { getSeriesLabels } from '$lib/analyzers/registry';
 
 	interface Props {
 		id: string;
@@ -11,6 +12,7 @@
 	const ds = $derived(datasetStore.current);
 	const tests = $derived(ds?.tests ?? []);
 	const infoColumns = $derived(ds?.info_columns ?? []);
+	const labels = $derived(getSeriesLabels(ds));
 
 	interface ColumnSummary {
 		column: string;
@@ -132,13 +134,13 @@
 		</div>
 		{#if ranges}
 			<div class="rounded-md border p-3" style="background: var(--surface-sunk); border-color: var(--border-default);">
-				<p class="caption-eyebrow" style="font-size: 10px;">Strain range</p>
+				<p class="caption-eyebrow" style="font-size: 10px;">{labels.x} range</p>
 				<p class="mt-1 text-sm font-semibold tabular-nums" style="color: var(--text-primary);">
 					{fmt(ranges.minStrain)} → {fmt(ranges.maxStrain)}
 				</p>
 			</div>
 			<div class="rounded-md border p-3" style="background: var(--surface-sunk); border-color: var(--border-default);">
-				<p class="caption-eyebrow" style="font-size: 10px;">Stress range (MPa)</p>
+				<p class="caption-eyebrow" style="font-size: 10px;">{labels.y} range</p>
 				<p class="mt-1 text-sm font-semibold tabular-nums" style="color: var(--text-primary);">
 					{fmt(ranges.minStress)} → {fmt(ranges.maxStress)}
 				</p>

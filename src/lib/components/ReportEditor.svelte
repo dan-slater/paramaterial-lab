@@ -12,6 +12,7 @@
 	import { onMount } from 'svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { getSeriesLabels } from '$lib/analyzers/registry';
 	import BlockRenderer from '$lib/components/BlockRenderer.svelte';
 	import ToolPalette from '$lib/components/ToolPalette.svelte';
 	import ChatPane from '$lib/components/ChatPane.svelte';
@@ -181,7 +182,7 @@
 							class="mt-1 text-xs italic"
 							style="color: var(--text-muted); font-family: var(--font-serif);"
 						>
-							Try "plot stress strain" or tap a tool in the palette.
+							Try "{getSeriesLabels(datasetStore.current).chatHint}" or tap a tool in the palette.
 						</p>
 					</div>
 				{/if}

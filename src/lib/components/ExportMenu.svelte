@@ -2,7 +2,7 @@
 	import { blocksStore, type Block } from '$lib/stores/blocks.svelte';
 	import { chatStore, type ChatMessage } from '$lib/stores/chat.svelte';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
-	import { getParameterDefs } from '$lib/analyzers/registry';
+	import { getParameterDefs, getSeriesLabels } from '$lib/analyzers/registry';
 	import {
 		findUplLpl,
 		findE,
@@ -184,7 +184,7 @@ ${body}
 	function titleForBlock(b: Block, idx: number): string {
 		const fallback: Record<string, string> = {
 			'dataset-picker': 'Dataset',
-			'stress-strain': 'Stress–strain',
+			'stress-strain': getSeriesLabels(datasetStore.current).name,
 			'foot-correction': 'Foot correction',
 			'property-table': 'Properties table',
 			'representative-curves': 'Representative curves',
@@ -200,7 +200,7 @@ ${body}
 	function renderStressStrainMd(b: Block): string {
 		const tests = datasetStore.current?.tests ?? [];
 		const colorBy = (b.config?.colorBy as string) ?? '—';
-		return `_(${tests.length} tests, color by: ${colorBy})_`;
+		return `_(${tests.length} ${getSeriesLabels(datasetStore.current).noun}, color by: ${colorBy})_`;
 	}
 
 	function renderFootCorrectionMd(b: Block): string {

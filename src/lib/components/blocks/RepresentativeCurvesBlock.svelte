@@ -5,6 +5,7 @@
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import { computeRepresentative } from '$lib/processing';
 	import { getPlotTheme } from '$lib/plotTheme';
+	import { getSeriesLabels } from '$lib/analyzers/registry';
 
 	interface Props {
 		id: string;
@@ -15,8 +16,9 @@
 
 	const tests = $derived(datasetStore.current?.tests ?? []);
 	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
-	const xLabel = $derived(datasetStore.current?.x_label ?? 'Strain');
-	const yLabel = $derived(datasetStore.current?.y_label ?? 'Stress (MPa)');
+	const labels = $derived(getSeriesLabels(datasetStore.current));
+	const xLabel = $derived(labels.x);
+	const yLabel = $derived(labels.y);
 	let groupBy = $state((config.groupBy as string) ?? '');
 
 	$effect(() => {

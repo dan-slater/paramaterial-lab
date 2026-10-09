@@ -3,6 +3,7 @@
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import StressStrainPlot from '$lib/components/StressStrainPlot.svelte';
 	import { findUplLpl } from '$lib/processing';
+	import { getSeriesLabels } from '$lib/analyzers/registry';
 
 	interface Props {
 		id: string;
@@ -16,8 +17,9 @@
 	let hiddenGroups = $state<Set<string>>(new Set());
 	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
 	const tests = $derived(datasetStore.current?.tests ?? []);
-	const xLabel = $derived(datasetStore.current?.x_label ?? 'Strain');
-	const yLabel = $derived(datasetStore.current?.y_label ?? 'Stress (MPa)');
+	const labels = $derived(getSeriesLabels(datasetStore.current));
+	const xLabel = $derived(labels.x);
+	const yLabel = $derived(labels.y);
 
 	$effect(() => {
 		if (!infoColumns.length) return;
@@ -99,7 +101,7 @@
 
 	// Compute E from first analyzable test for the offset line
 	const offsetE = $derived.by<number | undefined>(() => {
-		if (!showOffset) return undefined;
+		if (!showOffset || !labels.offsetLine) return undefined;
 		for (const t of tests) {
 			try {
 				const foot = findUplLpl({ strain: t.strain, stress: t.stress });
@@ -114,23 +116,25 @@
 
 <div class="flex items-start justify-between gap-4">
 	<div>
-		<p class="caption-eyebrow">Stress–strain</p>
+		<p class="caption-eyebrow">{labels.name}</p>
 		<h2
 			class="block-title mt-1 text-2xl font-semibold"
 			style="color: var(--text-primary); letter-spacing: -0.01em;"
 		>
-			All tests: stress vs strain
+			{labels.title}
 		</h2>
 		<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
-			{tests.length} curves, color-mapped by
+			{tests.length} {labels.noun}, color-mapped by
 			<span style="color: var(--color-plasma-400); font-style: normal;">{colorBy || '—'}</span>.
 		</p>
 	</div>
 	<div class="flex shrink-0 flex-wrap items-center gap-2 text-xs">
-		<label class="flex items-center gap-1" style="color: var(--text-secondary);">
-			<input type="checkbox" bind:checked={showOffset} class="accent-plasma-400" />
-			<span>Show 0.2% offset line</span>
-		</label>
+		{#if labels.offsetLine}
+			<label class="flex items-center gap-1" style="color: var(--text-secondary);">
+				<input type="checkbox" bind:checked={showOffset} class="accent-plasma-400" />
+				<span>Show 0.2% offset line</span>
+			</label>
+		{/if}
 		{#if infoColumns.length}
 			<label class="flex items-center gap-1">
 				<span style="color: var(--text-muted);">Color by</span>
@@ -161,7 +165,7 @@
 			{tests}
 			{colorBy}
 			height={420}
-			{showOffset}
+			showOffset={showOffset && labels.offsetLine}
 			offsetStrain={0.002}
 			{offsetE}
 			{hiddenGroups}
@@ -193,11 +197,11 @@
 			{/each}
 		</div>
 	{/if}
-	{#if showOffset && offsetE !== undefined}
+	{#if showOffset && labels.offsetLine && offsetE !== undefined}
 		<p class="mt-2 text-xs" style="color: var(--text-muted);">
 			Offset line: y = <span style="color: var(--color-plasma-400);">{offsetE.toFixed(0)}</span> · (ε − 0.002)
 		</p>
-	{:else if showOffset}
+	{:else if showOffset && labels.offsetLine}
 		<p class="mt-2 text-xs" style="color: var(--text-muted);">Could not compute E for any test.</p>
 	{/if}
 {/if}

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
+	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { getSeriesLabels } from '$lib/analyzers/registry';
 	import ApiKeyModal from './ApiKeyModal.svelte';
 
 	let input = $state('');
@@ -174,8 +176,13 @@
 			</button>
 		</div>
 		<p class="mt-1 text-[10px] italic" style="color: var(--text-muted); font-family: var(--font-serif);">
-			Tip: "plot stress strain", "find proof stress", "representative by temperature", "UTS vs
-			temperature".
+			{#if getSeriesLabels(datasetStore.current).offsetLine}
+				Tip: "plot stress strain", "find proof stress", "representative by temperature", "UTS vs
+				temperature".
+			{:else}
+				Tip: "{getSeriesLabels(datasetStore.current).chatHint}", "add the parameters table", "scatter
+				two parameters".
+			{/if}
 		</p>
 	</form>
 </aside>
