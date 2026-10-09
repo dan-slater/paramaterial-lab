@@ -3,6 +3,6 @@ Copyright (c) 2025-2026 Daniel Slater. All rights reserved.
 The source is published for reference and evaluation; no licence is granted to
 copy, modify, distribute or host this software.
 
-This notice covers the paramaterial lab web application in this directory
-(web/). The paramaterial Python package (paramaterial/) is licensed separately
-under the MIT License; see the LICENSE file at the repository root.
+This notice covers the paramaterial lab web application in this repository.
+The paramaterial Python package is a separate project, licensed under the MIT
+License: https://github.com/dan-slater/paramaterial
