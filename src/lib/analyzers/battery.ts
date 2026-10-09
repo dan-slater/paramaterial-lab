@@ -71,6 +71,8 @@ export function retentionAt(series: Series, cycle: number): number {
     }
   }
   if (bestI < 0) return 0;
+  // No extrapolation: a cycle past the end of the record has no retention.
+  if (cycle > x[x.length - 1]) return NaN;
   return y[bestI] / c0;
 }
 
@@ -149,10 +151,13 @@ export function kneeCycle(series: Series): number | null {
   return null;
 }
 
-/** Non-linear least-squares fit of C(n) = C0 · exp(-k · n^alpha) to the
- *  per-cycle capacity record. Uses Levenberg–Marquardt-lite (simplex on
- *  log-linearised initial guess then one Gauss–Newton refinement step).
- *  Returns NaN coefficients with rSquared = 0 on fit failure. */
+/** Fit C(n) = C0 · exp(-k · n^alpha) to the per-cycle capacity record by a
+ *  single closed-form OLS on the log-log linearisation
+ *  ln(ln(C0 / C(n))) = ln(k) + alpha · ln(n). C0 is the mean of the first three
+ *  capacities (nudged up by 0.05 % so C(n) < C0 holds); points with n < 1 or
+ *  C(n) >= C0 are dropped. No iterative refinement. R² is reported on the
+ *  original capacity residuals. Returns NaN coefficients with rSquared = 0 on
+ *  fit failure (fewer than 3 usable points, or k <= 0). */
 export interface StretchedExpFit {
   C0: number;
   k: number;

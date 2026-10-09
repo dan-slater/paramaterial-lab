@@ -17,21 +17,23 @@ The app ships with four preset datasets, each demonstrating the same pipeline on
 
 ![0.2% proof stress vs temperature — the canonical materials scatter, here on the basic-usage preset](/docs-img/materials-scatter.png)
 
-- **Materials.** 154 real tensile tests across 9 lots, 20–300 °C, from `dan-slater/paramaterial-examples`. The canonical plot is **0.2 % proof stress vs temperature**, coloured by lot; the softening trend and lot-to-lot offsets are the thing you want to see.
-- **Finance.** 40 real S&P 500 tickers across 8 sectors over ~2 trading years, fetched from Stooq (or Yahoo Finance as a fallback). The canonical plot — **max drawdown vs annualized volatility**, coloured by sector — shows the well-known positive relationship: higher-volatility names draw down harder. β is *not* a metadata field (it is a derived quantity against a market factor); the chapter's generalisation section proposes the schema extension that would make β a first-class analyzer.
-- **Climate.** 30 real NOAA GHCN-Daily stations, three years (2022-08-22 → 2025-08-20) of daily mean temperature. The canonical plot is **annual mean vs latitude**; preliminary real-data correlation is `corr(annual_mean, |lat|) ≈ −0.86`. Seasonal amplitude and poleward-amplification trend are secondary parameters.
-- **Battery.** 124 real LFP/graphite 18650 cells from the Severson et al. 2019 *Nature Energy* release (Toyota Research Institute / MIT / Stanford), fetched from a public mirror. The canonical plot is **cycle_life vs nominal_c_rate_charge**; `cycle_life` (true Severson end-of-life) sits at ~150–2237 cycles and shows the expected rate-capability tail. Per-cell stress arrays currently span the public Qdlin window (first 99 cycles); the provenance chapter documents how to extend to full-life.
+- **Materials.** 154 real tensile tests across 9 lots, 20–300 °C, from `dan-slater/paramaterial-examples`. The canonical plot is **0.2 % proof stress vs temperature**; the softening trend is the thing you want to see. A few specimens sit at or near zero in the figure: those are tests where the automatic elastic-window fit behind the proof stress fails, not real values, and they are the reason the materials case studies screen curves before extracting properties.
+- **Finance.** 40 real US large-cap tickers across 8 sectors over 504 trading days (2024-04-17 → 2026-04-21), shipped as a Yahoo Finance snapshot (the builder prefers Stooq, which now needs a key). The canonical plot is **max drawdown vs annualized volatility** (r = +0.79): higher-volatility names draw down harder. β is *not* a metadata field (it is a derived quantity against a market factor); the chapter's generalisation section proposes the schema extension that would make β a first-class analyzer.
+- **Climate.** 30 real NOAA GHCN-Daily stations, three years (2022-08-22 → 2025-08-20) of daily mean temperature. The canonical plot is **annual mean vs latitude**; `corr(annual_mean, |lat|) = −0.86`. Seasonal amplitude correlates only loosely with |lat| (+0.51), and no warming trend is recoverable from a three-year record; the chapter shows why.
+- **Battery.** 124 real LFP/graphite 18650 cells from the Severson et al. 2019 *Nature Energy* release (Toyota Research Institute / MIT / Stanford), fetched from a public mirror. The canonical plot is **cycle_life vs nominal_c_rate_charge**; `cycle_life` (true Severson end of life) runs 148–2 237 cycles, and the first-step charge rate (3.6–8 C) does **not** predict it (r = −0.03). Batch and early-life fade do. Per-cell capacity arrays span only the public early-life window (cycles 2–100); the chapter documents how to extend to full life.
+
+Every number in these paragraphs and in the domain chapters is computed by `node scripts/chapter-numbers.mjs` from the shipped JSON. Each preset also has a shareable URL that opens it with its report template: `/lab/materials`, `/lab/finance`, `/lab/climate`, `/lab/battery`. You can also import your own CSV from the dataset picker; it is parsed in the browser into the same shape.
 
 ## Quick-start — six clicks to the full pipeline
 
 If you do nothing else on first use, do this. It exercises every core concept.
 
-1. **Load preset** → pick *Basic Usage — Uniaxial Tension* from the preset menu. A 154-specimen materials dataset loads into memory.
-2. **Add a Stress–strain block** → the raw curves render, one per specimen, colour-coded by lot.
-3. **Add a Parameters block** → tick **Young's modulus** (key `E`), **0.2% proof stress** (key `ProofStress`), and **Ultimate tensile strength** (key `UTS`) from the analyzer menu; the block computes one row per specimen. ([see methodology §2 for formulas](#2-materials-analyzers))
-4. **Add a Parameter scatter block** → Y = *proof stress (0.2 %)*, X = *temperature* (from metadata), colour by lot.
-5. **Swap axes** → flip X and Y, or change X to *lot* to see a categorical view. Nothing re-computes; the scatter just re-binds.
-6. **Done.** You have just run the same pipeline that structures every other preset — reload the page and pick *Finance* to see it again with drawdowns and betas.
+1. **Load preset** → open `/lab/materials`, or pick *Materials — Uniaxial Tension* in the dataset picker. A 154-specimen materials dataset loads into memory. (The route also adds this walk-through's blocks for you; the steps below build them by hand.)
+2. **Add a Stress–strain block** → the raw curves render, one per specimen. Pick `lot` in the block's *Color by* menu to colour-code by lot.
+3. **Add a Parameters block** → it computes every registered materials parameter, one row per specimen: **Young's modulus** (key `E`), **0.2% proof stress** (key `ProofStress`) and **Ultimate tensile strength** (key `UTS`). ([see methodology §2 for formulas](#2-materials-analyzers))
+4. **Add a Parameter scatter block** → Y = *0.2% proof stress (MPa)*, X = *temperature* (from metadata).
+5. **Swap axes** → flip X and Y, or change Y to *Young's modulus*. Nothing re-computes; the scatter just re-binds. (The scatter plots numeric axes only and has no colour key yet, so lot-to-lot offsets are read from the Stress–strain block and the Parameters table.)
+6. **Done.** You have just run the same pipeline that structures every other preset — open `/lab/finance` to see it again with drawdown against volatility.
 
 ## Design rationale
 
@@ -39,15 +41,16 @@ The tool's core unit is a *Svelte-hosted report* composed of blocks because a re
 
 ## Scope and non-goals
 
-This is a research and teaching tool. It is **not** a replacement for domain-specific analysis libraries (scipy, statsmodels, pybamm, xarray); it is **not** a backtester and cannot model transaction costs, slippage, or realistic factor structure; it is **not** a climate reanalysis product and does not ingest ERA5 or CMIP; it is **not** a battery validation platform and does not model EIS, DVA, or coupled electro-thermal behaviour. Three domains of synthetic data, plus one domain of real tensile data, do not make a production tool. The generalisation claim is that the *workflow abstraction* holds; the per-domain analyzers shipped here are demonstrations, not reference implementations.
+This is a research and teaching tool. It is **not** a replacement for domain-specific analysis libraries (scipy, statsmodels, pybamm, xarray); it is **not** a backtester and cannot model transaction costs, slippage, or realistic factor structure; it is **not** a climate reanalysis product and does not ingest ERA5 or CMIP; it is **not** a battery validation platform and does not model EIS, DVA, or coupled electro-thermal behaviour. Four small real datasets do not make a production tool. The generalisation claim is that the *workflow abstraction* holds; the per-domain analyzers shipped here are demonstrations, not reference implementations.
 
 ## Where to go next
 
 - **Methodology reference.** Analyzer-by-analyzer formulas, numerical notes, and edge cases, grouped by domain.
 - **Materials — stress–strain case studies.** The original use case, including Ramberg–Osgood fitting, UT vs PST, and Zener–Hollomon regression on hot compression data.
-- **Finance — daily equity returns.** Synthesis recipe, recoverable relationships, and the one-to-one mapping back to the materials workflow.
-- **Climate — daily temperature records.** The 41-station synthetic record and the three relationships it is designed to recover.
-- **Battery — capacity fade across cycling.** The chemistry × C-rate × temperature matrix and the knee-injection mechanism.
+- **Finance — daily equity returns.** Dataset provenance, stylised facts, recoverable relationships, and the one-to-one mapping back to the materials workflow.
+- **Climate — daily temperature records.** 30 GHCN-Daily stations, the harmonic fit, and which of three textbook relationships a three-year record can and cannot recover.
+- **Battery — capacity fade across cycling.** 124 Severson cells, the stretched-exponential fit and its limits on early-life data, and why batch beats C-rate.
+- **Reproducibility.** Data sources, caches, overrides and how to recompute every number.
 - **Glossary.** Every technical term used in the other chapters, one short entry each.
 
 ## References

@@ -18,7 +18,7 @@ Derived from `SUPERVISOR_REVIEW_2.md` (Tier C) and `SUPERVISOR_REVIEW_3.md` (fin
 
 ## Lightweight candidates
 
-- Add a **visual diff** between materials-real and the three synthetic domains to the overview, showing that the synthetic scatters are designed to be easily-recoverable whereas the materials scatter carries real experimental noise.
+- ~~Add a visual diff between materials-real and the three synthetic domains.~~ Superseded: since v0.2 all four presets are real data (struck per `SUPERVISOR_REVIEW_4.md` §2).
 - Add a **"reading guide"** paragraph to `00-overview.md` that tells a first-time reader whether to read the chapters sequentially (materials → methodology → domains), by domain (direct to one), or as a reference (methodology + glossary only).
 - Embed **a Playwright-driven live demo** of the click-path from the overview's quick-start, generating a short MP4 or animated PNG checked into `static/docs-img/`.
 
@@ -26,6 +26,21 @@ Derived from `SUPERVISOR_REVIEW_2.md` (Tier C) and `SUPERVISOR_REVIEW_3.md` (fin
 
 - The materials chapter's source citations for Baron (2005) and Hyde remain `placeholder pending confirmation`. Whoever has access to the original MSc-thesis reference table should promote them to full citations.
 - The quick-start UI labels were normalised against `src/lib/analyzers/registry.ts` in the second fix-up pass, but no one has walked the six clicks live and diff-ed the resulting block labels against what appears in the UI's `aria-label`s. A one-hour Playwright script would close this.
+
+## Added in the v0.2 docs pass (2026-10-09)
+
+Found while closing `SUPERVISOR_REVIEW_4.md` Tier A; see `SUPERVISOR_REVIEW_5.md`.
+
+- **Scatter colour key and categorical axes.** The Parameter scatter plots numeric axes only and has no colour-by, so "coloured by sector / lot / batch" and "X = sector" are not one-click plots. This is the single UI gap the chapters most often have to narrate around.
+- **`abs_latitude` metadata** in `build-climate.mjs`, so the climate chapter's headline −0.86 is reachable in the UI.
+- **Parse the battery `policy` string** into `c1`, `soc_switch`, `c2` metadata.
+- **Full-life battery rebuild** from the matr.io `.mat` files, after which `cyclesTo80Pct`, `Ret500`, `kneeCycle` and `fitStretchedExp` become meaningful.
+- **Covariate schema** (`Dataset.covariates`) for finance β and factor loadings (`30-finance.md`, "Where paramaterial must generalise next").
+- **Calendar-aligned climate bins** for `seasonalAmplitude` / `summerAnomaly`, using `provenance.window.start`.
+- **Second harmonic** in `fitHarmonicTrend`, to test whether the residual trend–amplitude correlation (+0.42) is seasonal-shape leakage.
+- **Rebuild the shipped data** once: picks up the source-aware finance name (the shipped JSON still says "Stooq" though it was built from Yahoo) and the `null` altitude for Amundsen–Scott. Then rerun `scripts/chapter-numbers.mjs` and refresh the chapters from its output.
+- **Domain-aware labels in the series block.** On finance/climate/battery it still reads "stress vs strain" and offers a "0.2 % offset line".
+- ~~Tier C3 chapter-audit bench.~~ Done: `scripts/chapter-numbers.mjs`.
 
 ---
 

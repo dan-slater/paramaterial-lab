@@ -116,7 +116,9 @@ function parseStations(text) {
 		const elev = parseFloat(line.slice(31, 37));
 		const name = line.slice(41, 71).trim();
 		if (!id || Number.isNaN(lat) || Number.isNaN(lon)) continue;
-		idx.set(id, { id, lat, lon, elev: Number.isFinite(elev) ? elev : null, name });
+		// ghcnd-stations.txt writes -999.9 for an unknown elevation (Amundsen-Scott).
+		const known = Number.isFinite(elev) && elev > -999;
+		idx.set(id, { id, lat, lon, elev: known ? elev : null, name });
 	}
 	return idx;
 }

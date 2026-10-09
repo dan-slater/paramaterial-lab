@@ -22,8 +22,9 @@ from typing import Any
 import pandas as pd
 
 
-EXAMPLES_ROOT = Path("/tmp/paramaterial-examples/examples")
-OUT_DIR = Path("static/data")
+# Override with PARAMATERIAL_EXAMPLES=<clone>/examples; output defaults to web/static/data.
+EXAMPLES_ROOT = Path(os.environ.get("PARAMATERIAL_EXAMPLES", "/tmp/paramaterial-examples/examples"))
+OUT_DIR = Path(os.environ.get("PARAMATERIAL_DATA_OUT", Path(__file__).resolve().parent.parent / "static" / "data"))
 
 MAX_POINTS = 2000
 

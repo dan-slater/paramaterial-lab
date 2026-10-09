@@ -43,9 +43,13 @@ The field names `strain` and `stress` are historical. Paramaterial grew out of a
 | materials  | ε (strain, dimensionless)   | σ (stress, MPa)                 |
 | finance    | trading-day index           | adjusted close price            |
 | climate    | day-of-record index         | daily mean temperature (°C)     |
-| battery    | cycle number                | discharge capacity (mAh/g)      |
+| battery    | cycle index (0…98 window)   | discharge capacity (Ah)         |
 
 Display labels come from `Dataset.x_label` / `Dataset.y_label`; analyzer code simply operates on `series.strain` (x) and `series.stress` (y).
+
+### Imported CSVs
+
+A visitor's CSV becomes a `Dataset` of exactly this shape, in the browser, via `src/lib/csvImport.ts` (`parseCsv` → `guessMapping` / `guessDomain` → `buildDataset`). The mapped x column becomes `strain`, the y column `stress`; an optional id column splits a long-format file into one `Test` per id, otherwise each file is one `Test`. Columns constant within a series become `meta`, and the chosen domain picks the analyzer set. Date-valued x columns become days since the first date. Nothing is sent to a server.
 
 ### Series, analyzer, tool
 
@@ -55,7 +59,7 @@ Display labels come from `Dataset.x_label` / `Dataset.y_label`; analyzer code si
 
 ### Units and numerical conventions
 
-Units live in `ParameterDef.unit` strings only; analyzers operate on whatever numbers the builder script produced. Materials: MPa and dimensionless strain. Finance: raw adjusted closes with a hard-coded 252-trading-day year. Climate: °C on a 365-day year (leap days ignored). Battery: mAh/g with integer cycle numbers.
+Units live in `ParameterDef.unit` strings only; analyzers operate on whatever numbers the builder script produced. Materials: MPa and dimensionless strain. Finance: raw adjusted closes with a hard-coded 252-trading-day year. Climate: °C on a 365-day year (leap days ignored). Battery: Ah with integer cycle indices (the shipped Severson window is index 0…98 = cycles 2–100).
 
 There is **no sparse handling** — every series is a dense array. Missing samples are `NaN` and are silently skipped inside each analyzer (finance is stricter and assumes no gaps). NaN/Inf propagate unless explicitly filtered with `Number.isFinite`. Out-of-range interpolation returns `NaN` rather than clamping. The registry wraps every extractor in `safe(...)` which converts exceptions and non-finite outputs to `null`.
 
@@ -241,6 +245,38 @@ Sample excess kurtosis, also Joanes–Gill / SAS G2:
 
 Returns 0 for n < 4. Note the registry label is `ExKurt`; this is already the excess (subtract-3) form, not raw kurtosis.
 
+### `rollingVolatility`
+
+```ts
+export function rollingVolatility(series: Series, window: number = 21): number[]
+```
+
+Per-day annualised volatility over a **centred** window of `window` log returns (default 21, about one trading month): for return index `t` the window is `[t − ⌊w/2⌋, t + w − 1 − ⌊w/2⌋]`, clipped to the record, so it shrinks at both ends rather than padding. Each value is the unbiased sample standard deviation (n − 1) of the returns in the window, times √252:
+
+    σ̂_roll(t) = √252 · √( Σ_{i∈W(t)} (r_i − r̄_W)² / (|W(t)| − 1) )
+
+Returns an array of length n − 1 (one per return). Windows with fewer than two returns give 0. A path function, not a scalar: it has no registry row, so it is reachable from code but not from the Parameters block.
+
+### `ewmaVolatility`
+
+```ts
+export function ewmaVolatility(series: Series, lambda: number = 0.94): number[]
+```
+
+RiskMetrics exponentially weighted volatility:
+
+    σ̂²(t) = λ · σ̂²(t−1) + (1 − λ) · r_t²,     σ̂²(0) = r_0²,     σ̂_ann(t) = √252 · σ̂(t)
+
+Zero-mean convention (squared returns, not squared deviations), seeded on the first squared return. `λ` is clamped to `[0, 0.999999]`; 0.94 is the RiskMetrics (1996) daily default. Element 0 is `NaN`. EWMA is the GARCH(1,1) special case ω = 0, α = 1 − λ, β = λ. Like `rollingVolatility` it returns one value per return and has no registry row.
+
+### `volClusteringIndex`
+
+```ts
+export function volClusteringIndex(series: Series): number
+```
+
+Pearson correlation between |r_t| and |r_{t−1}| over the log returns, clamped to [−1, 1]; 0 for n < 3 or zero variance. Independent returns score about 0; Cont (2001) lists positive autocorrelation of absolute returns as a stylised fact of real markets, typically +0.1 to +0.3 for single equities at lag 1. Registered as `VolCluster`.
+
 ## 4. Climate analyzers
 
 All in `src/lib/analyzers/climate.ts`. Convention: `strain` is day-of-record index, `stress` is daily mean temperature in °C. `DAYS_PER_YEAR = 365` — leap days ignored, a deliberate simplification that biases sub-day effects but is fine at the annual aggregation level.
@@ -255,11 +291,11 @@ Slice the record into consecutive 365-day years (trailing partial year discarded
 
 ### `seasonalAmplitude`
 
-For each complete year, split into 12 pseudo-months of `floor(m · 365/12)` boundaries, take monthly means, and record `(max − min) / 2`. Return the mean amplitude across years. The pseudo-month boundaries are tuneable — a calendar-accurate alternative would replace them with actual month-length lookups, but the current approximation gives month lengths of 30 or 31 days and matches the analysis resolution.
+For each complete 365-day year of the record (counted from its first day, not from 1 January), split into 12 pseudo-months of `floor(m · 365/12)` boundaries, take monthly means, and record `(max − min) / 2`. Return the mean amplitude across years. The pseudo-month boundaries are tuneable — a calendar-accurate alternative would replace them with actual month-length lookups, but the current approximation gives month lengths of 30 or 31 days and matches the analysis resolution.
 
 ### `trendPerYear`
 
-OLS slope of (day-index, temperature), multiplied by 365 to convert °C/day to °C/year. Uses the covariance/variance closed form rather than `linfit` from `processing.ts` — identical mathematically, duplicated here to keep domains decoupled. Returns 0 if the denominator is zero (constant x) or n < 2.
+OLS slope of (day-index, temperature), multiplied by 365 to convert °C/day to °C/year. Uses the covariance/variance closed form rather than `linfit` from `processing.ts` — identical mathematically, duplicated here to keep domains decoupled. Returns 0 if the denominator is zero (constant x) or n < 2. **Biased by the seasonal cycle:** a sinusoid over whole years is not orthogonal to a line unless its phase is right, so the slope absorbs part of the cycle. On the shipped climate preset the median is +0.84 °C/yr and it tracks seasonal amplitude at r = +0.76. Prefer `harmonicTrendPerYear`.
 
 ### `summerAnomaly`
 
@@ -267,7 +303,7 @@ OLS slope of (day-index, temperature), multiplied by 365 to convert °C/day to �
 export function summerAnomaly(series: ClimateSeries, hemisphere: 'N' | 'S'): number
 ```
 
-Mean temperature across the three summer months minus the overall annual mean. Summer months are months 5–7 (Jun–Aug) for N hemisphere and months 11, 0, 1 (Dec–Feb) for S hemisphere. Month boundaries use the same pseudo-month scheme as `seasonalAmplitude`. Registered with `hemisphere` pulled from test metadata (`meta.hemisphere`), defaulting to `'N'` if the key is missing.
+Mean temperature across the three summer pseudo-months minus the overall annual mean. Summer is pseudo-months 5–7 for the N hemisphere and 11, 0, 1 for the S hemisphere, using the same scheme as `seasonalAmplitude`. The bins count from the first day of the record, not 1 January, so they line up with Jun–Aug / Dec–Feb only when the record starts on 1 January (the shipped climate window starts on 22 August). Registered with `hemisphere` pulled from test metadata (`meta.hemisphere`), defaulting to `'N'` if the key is missing.
 
 ### `extremeHotDays` / `extremeColdDays`
 
@@ -278,9 +314,36 @@ export function extremeColdDays(series: ClimateSeries, threshold: number): numbe
 
 Straight counts of days with `T > threshold` (hot) or `T < threshold` (cold). Registered with thresholds 30 °C and 0 °C respectively — the two classical public-health and agronomy cut-offs. Thresholds are tuneable by changing the registry entry.
 
+### `fitHarmonicTrend`
+
+```ts
+export function fitHarmonicTrend(series: ClimateSeries): HarmonicFit
+// HarmonicFit = { a, b, c, d, amplitude, phase, peakDay, rSquared }
+```
+
+Ordinary least squares fit of a level, a linear trend and one annual harmonic:
+
+    T(t) = a + b·t + c·cos(ωt) + d·sin(ωt),     ω = 2π/365,  t = day index
+
+The 4×4 normal equations `XᵀX β = Xᵀy` on the columns `[1, t, cos ωt, sin ωt]` are accumulated in one pass and solved by Gauss–Jordan elimination with partial pivoting; if any pivot falls below 10⁻¹² the function returns an all-zero fit. Derived outputs:
+
+    amplitude = √(c² + d²)          phase = atan2(d, c)
+    peakDay   = (phase / ω) mod 365   (on the record's own day index, not calendar day-of-year)
+    R²        = 1 − RSS / Σ(yᵢ − ȳ)²
+
+Returns the zero fit for n < 4. Fitting the cycle jointly with the trend is what stops the seasonal signal leaking into `b`; one harmonic cannot represent a skewed annual cycle, so some leakage remains (on the shipped preset `harmonicTrendPerYear` still correlates with amplitude at r = +0.42).
+
+### `harmonicAmplitude`
+
+`fitHarmonicTrend(series).amplitude`, in °C. Registered as `HarmAmp`. Agrees with the binned `seasonalAmplitude` to r = +0.997 on the shipped preset, but uses every day instead of 12 bin means.
+
+### `harmonicTrendPerYear`
+
+`fitHarmonicTrend(series).b · 365`, in °C/yr. Registered as `HarmTrend`. The preferred trend estimator; on three years of data it is still dominated by weather noise at any single station.
+
 ## 5. Battery analyzers
 
-All in `src/lib/analyzers/battery.ts`. Convention: `strain` is the cycle number, `stress` is discharge capacity (mAh/g). The helper `isNum` gates every read so NaN/Inf/non-number entries are skipped rather than propagated.
+All in `src/lib/analyzers/battery.ts`. Convention: `strain` is the cycle index, `stress` is discharge capacity (Ah). The helper `isNum` gates every read so NaN/Inf/non-number entries are skipped rather than propagated.
 
 ### `initialCapacity`
 
@@ -294,7 +357,7 @@ Most recent finite capacity (reverse linear scan until a numeric entry is found)
 
     fade = (C_first − C_last) / (cycle_last − cycle_first)
 
-Returns 0 if only one finite sample exists or if the x-range is zero. Positive for normal (fading) batteries, negative if capacity has net increased. Registered in mAh/g·cycle.
+Returns 0 if only one finite sample exists or if the x-range is zero. Positive for normal (fading) batteries, negative if capacity has net increased. Registered in Ah/cycle.
 
 ### `cyclesTo80Pct`
 
@@ -312,7 +375,34 @@ Acceptance: both segment slopes must be negative and `|s₂| ≥ 2|s₁|`; other
 export function retentionAt(series: Series, cycle: number): number
 ```
 
-Nearest-neighbour lookup: find the finite sample with `x_i` closest to the target `cycle`, return `y_i / C_0`. Does **not** interpolate — for retention curves this matters less than it does for flow stress, but if cycles are sparse it can introduce 1–2 % error. Registered with `cycle = 500` as `Ret500`. Returns 0 if `C_0 = 0` or no finite sample exists.
+Nearest-neighbour lookup: find the finite sample with `x_i` closest to the target `cycle`, return `y_i / C_0`. Does **not** interpolate — for retention curves this matters less than it does for flow stress, but if cycles are sparse it can introduce 1–2 % error. Registered with `cycle = 500` as `Ret500`. Returns 0 if `C_0 = 0` or no finite sample exists, and `NaN` (shown as "—") if `cycle` lies past the last sample: it never extrapolates. On the shipped 99-cycle Severson window `Ret500` is therefore blank for every cell.
+
+### `fitStretchedExp`
+
+```ts
+export function fitStretchedExp(series: Series): StretchedExpFit
+// StretchedExpFit = { C0, k, alpha, rSquared }
+```
+
+Fits the stretched-exponential fade model
+
+    C(n) = C₀ · exp(−k · n^α)
+
+with `C₀` fixed to `initialCapacity` and nudged up by 0.05 % so that `C(n) < C₀` holds for every kept point. Taking logs twice linearises it:
+
+    ln(ln(C₀ / C(n))) = ln k + α · ln n
+
+and `α`, `ln k` come from a single closed-form OLS on `(ln n, ln ln(C₀/C(n)))`. There is no iterative refinement (no Levenberg–Marquardt, no Gauss–Newton step). Domain: points with `n < 1` or `C(n) ≥ C₀` are dropped because the transform is undefined there. Fails (NaN coefficients, `rSquared = 0`) with fewer than 5 finite points, fewer than 3 usable log-log points, or `k ≤ 0`. R² is computed on the original capacity residuals, not the log-log ones.
+
+Limits: the double log amplifies noise when `C(n)` is close to `C₀`, so early-life records with little fade give unstable `α`. On the shipped 99-cycle Severson window the fit succeeds on 113 of 124 cells with median R² 0.11 (55 below zero), and `α` ranges from −0.30 to 5.5. Treat it as meaningful only on full-life data.
+
+### `fadeExponent`
+
+`fitStretchedExp(series).alpha`, dimensionless. Registered as `FadeExp`. α < 1 is sub-linear (decelerating) fade in `n^α`, α > 1 accelerating.
+
+### `fadeRateConstant`
+
+`fitStretchedExp(series).k`, in units of cycle^(−α). Registered as `FadeK`. Because its units depend on α, compare `k` only between cells with similar α.
 
 ## 6. Analyzer registry
 
@@ -337,6 +427,8 @@ To surface a new analyzer, append a `ParameterDef` to the appropriate array. To 
 2. **Analyzers.** Implement domain-specific analyzers in `src/lib/analyzers/<domain>.ts`. Keep them pure, tolerate NaNs, return scalars or small records, and prefer sample (unbiased) estimators. Duplicate small helpers like `mean` rather than cross-importing from other domains — this keeps the files independent and easy to delete.
 3. **Registry.** In `src/lib/analyzers/registry.ts`, import your module, build a `ParameterDef[]` array, and extend the `switch` in `getParameterDefs`. Pick stable `key` strings (they end up in URLs and CSV exports) and include `unit` where applicable.
 4. **Preset.** Add a `DatasetInfo` entry to `PRESET_DATASETS` in `src/lib/datasets.ts` with the new `id`, a `domain`, and a short description. The dataset picker will pick it up automatically.
+
+5. **Chapter numbers.** Add the new domain to `scripts/chapter-numbers.mjs` so every number the chapter prints is computed from the shipped JSON, and rerun it after every data rebuild.
 
 The scatter tool and plotting components are domain-agnostic — they react to `Dataset.domain` and the registry output. Bespoke case-study blocks (as materials has for CS1–CS4) go in `src/lib/blocks/`.
 

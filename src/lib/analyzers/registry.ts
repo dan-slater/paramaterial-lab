@@ -112,19 +112,19 @@ const batteryParams: ParameterDef[] = [
 	{
 		key: 'C0',
 		label: 'Initial capacity',
-		unit: 'mAh/g',
+		unit: 'Ah',
 		extract: safe((s) => battery.initialCapacity(s))
 	},
 	{
 		key: 'Cnow',
 		label: 'Current capacity',
-		unit: 'mAh/g',
+		unit: 'Ah',
 		extract: safe((s) => battery.currentCapacity(s))
 	},
 	{
 		key: 'FadePerCycle',
 		label: 'Fade per cycle',
-		unit: 'mAh/g·cycle',
+		unit: 'Ah/cycle',
 		extract: safe((s) => battery.fadePerCycle(s))
 	},
 	{

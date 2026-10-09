@@ -94,14 +94,15 @@ shock on days 325–335 — **are gone**. Any drawdowns visible in the real
 series occur at whatever calendar dates the rolling 504-day window
 happens to cross; they are no longer mechanical. As a direct
 consequence, the +0.73 β-vs-`MaxDD` correlation documented in v0.1 was an
-artefact of the injected market window and **must be re-computed from the
-real data** rather than quoted from a synthetic generator.
+artefact of the injected market window. Recomputed on the real data, outside
+the tool, it is +0.48 (see Recoverable relationships).
 
-**v0.2 numbers (refreshed 2026-04-22).** The quantitative claims in the
-sections below have been re-computed against the current 504-day real-price
-window via `tmp/compute-stale.mjs`. They are specific to that window and
-will drift on every rebuild; the chapter treats them as worked examples
-rather than fixed anchors.
+**Numbers in this chapter.** Every quantitative claim below is computed by
+`node scripts/chapter-numbers.mjs` from the shipped `static/data/finance.json`,
+built 2026-04-22 from Yahoo Finance (Stooq had become key-gated, so the
+builder fell back; `generator_note` in the JSON records which source was
+used). The window is 504 aligned business days, 2024-04-17 → 2026-04-21.
+The numbers are specific to that window and move on every rebuild.
 
 ## First-moment analyzers
 
@@ -113,7 +114,7 @@ close.
 
 **Log returns.** `logReturns(series): number[]` computes
 rᵢ = ln(pᵢ / pᵢ₋₁). Log returns are time-additive — the sum over a window
-is the window log return — and they are the natural quantity under GBM.
+is the window log return.
 
 **Annualized return.** `annualizedReturn(series): number` applies geometric
 annualisation: exp(ln(p_N / p_0) / years) − 1, with
@@ -135,8 +136,8 @@ annotate both endpoints on the equity curve.
 
 **Skewness and excess kurtosis.** `skewness(series)` uses the adjusted
 Fisher–Pearson estimator with the n/((n−1)(n−2)) correction. `kurtosis`
-returns *excess* kurtosis (so a normal scores 0). For the GBM generator both
-should sit near zero.
+returns *excess* kurtosis (so a normal scores 0). On the shipped window
+every ticker is fat-tailed; see the stylised facts below.
 
 The registry keys and UI labels are `AnnReturn` → **Annualized return**,
 `AnnVol` → **Annualized volatility**, `Sharpe` → **Sharpe ratio**, `MaxDD`
@@ -184,107 +185,99 @@ The new signatures exported from `finance.ts` are
 annualised EWMA σ̂ per day (NaN on day 0 since the estimator needs at least
 one return). `volClusteringIndex` is the scalar companion documented below.
 
-## Stylised facts the finance preset recovers
+## Stylised facts on the real-data preset
 
-Cont's 2001 list [6] is the right checklist for a synthetic generator. The
-finance preset scores as follows. *Heavy-tailed daily returns:* partial.
-Individual tickers have Gaussian innovations, but the mixture across
-β-scaled market shocks and injected dip windows produces excess kurtosis
-mildly above zero. *Volatility clustering:* **no, by construction** — daily
-innovations are independent. *Leverage effect:* no — negative returns do
-not feed back into next-day variance. *Asymmetric response to shocks:* no —
-the GBM increments are symmetric around the drift. *Aggregational
-Gaussianity:* yes, trivially, since the generator is Gaussian at the
-daily scale. *Slow decay of autocorrelation in absolute returns:* no.
-*Volume/volatility coupling:* not applicable — there is no volume.
+Cont's 2001 list [6] collects the properties real daily returns share. Three
+of them can be checked inside the tool on the shipped 504-day window, and
+all numbers below come from `node scripts/chapter-numbers.mjs`:
 
-The `volClusteringIndex` scalar is the single-column diagnostic for this.
-It is the Pearson correlation between |r_t| and |r_{t-1}|. On real equity
-returns this value is typically +0.1 to +0.3; on the v0.1 synthetic preset
-it sat near zero, with no meaningful sector difference. On the current
-v0.2 real-data window the cross-sectional mean sits at **+0.13** with a
-per-ticker range of 0.00–0.29 — squarely inside the expected band. Sector
-means separate weakly (Utilities +0.08, Consumer +0.10, Technology +0.11,
-Healthcare / Industrials +0.12, Financials +0.14, Materials +0.15,
-Energy +0.18). Energy clusters fastest, as expected given its exposure to
-oil-price shock regimes; Utilities is flattest. This is a feature, not a
-defect: the reader can confirm the v0.1 generator's limits and the v0.2
-real data's clustering with one Parameters-block column.
+- **Heavy tails: yes.** Excess kurtosis (`ExKurt`) is positive for all 40
+  tickers: median +5.7, range +0.8 to +27.0. A normal scores 0.
+- **Volatility clustering: yes.** `volClusteringIndex`, the Pearson
+  correlation between |r_t| and |r_{t−1}|, is positive for all 40 tickers:
+  mean +0.125, range +0.001 to +0.285, inside the +0.1 to +0.3 band usually
+  reported for equities. Sector means: Energy +0.18, Materials +0.15,
+  Financials +0.14, Healthcare +0.12, Industrials +0.12, Technology +0.11,
+  Consumer +0.10, Utilities +0.08. With three to seven tickers per sector
+  the ordering is suggestive, not significant.
+- **Gain/loss asymmetry: weak.** Median skewness is −0.27, but the range
+  (−3.18 to +1.85) is set by single-name event days such as earnings gaps,
+  so the sign of one ticker's skew says little.
+
+Absence of linear autocorrelation, the leverage effect, slow decay of
+autocorrelation in absolute returns and aggregational Gaussianity are not
+measured by any shipped analyzer. There is no volume in the dataset.
 
 ## Recoverable relationships
 
-| Relationship | Value on the preset (v0.2, 504-day window) | Driven by |
+| Relationship | Value on the preset (504-day window, 40 tickers) | Reachable in the UI? |
 |---|---|---|
-| corr(β, `MaxDD`) across all tickers | **+0.48** (β proxy = OLS on equal-weighted market index) | Real market drawdown of −17% (peak day 503 → trough day 243) exposes high-β names more; weaker than the +0.73 v0.1 artefact because the signal is emergent rather than mechanical |
-| Mean `Sharpe` by sector (best → worst) | Financials **+1.17**, Utilities **+0.84**, Materials **+0.66**, Consumer **+0.62**, Industrials **+0.55**, Technology **+0.47**, Healthcare **+0.26**, Energy **+0.18** | All positive on the current bull-window; sector ordering reflects the realised rally rather than a generator's drift/β design matrix |
-| Visible drawdowns on the price overlay | Single market-wide trough at **day ≈ 243**, −17% peak-to-trough on the equal-weighted proxy; no second Energy-only dip | Emergent from the 2024–2026 real window; the two v0.1 injected shocks (day 180 market-wide, day 330 Energy) are gone |
-| `volClusteringIndex` across sectors | Cross-sectional mean **+0.13** (range 0.00–0.29 per ticker); weak sector ordering — Energy +0.18, Materials +0.15, Financials +0.14, Healthcare/Industrials +0.12, Tech +0.11, Consumer +0.10, Utilities +0.08 | Real returns exhibit Cont-style clustering; the v0.1 generator had independent innovations and sat near zero |
+| corr(`MaxDD`, `AnnVol`) | **+0.79** | Yes: the canonical scatter below |
+| corr(`Sharpe`, `AnnVol`) | **−0.07**, no relationship | Yes |
+| Mean `Sharpe` by sector (best → worst) | Financials **+1.18**, Utilities **+0.84**, Materials **+0.64**, Consumer **+0.60**, Industrials **+0.56**, Technology **+0.43**, Healthcare **+0.28**, Energy **+0.16** | Per-ticker values in the Parameters table; means computed by the bench |
+| Equal-weighted market drawdown | **−17 %**, peak day 210 → trough day 244 | Visible on the price overlay |
+| corr(β, `MaxDD`) | **+0.48**, β = OLS slope on the equal-weighted mean log return (median β 0.99, range 0.15–2.09) | **No.** Computed outside the tool; needs covariates |
 
-The +0.48 β–MaxDD correlation is emergent, not mechanical. The equal-weighted
-market proxy registered a −17 % drawdown troughing at day 243 of the current
-504-day window; high-β names amplified it. The effect is real but noisier
-than v0.1's injected window produced, because individual tickers carry
-idiosyncratic volatility that dilutes the market-beta channel. A
-single-market-drawdown-dominated window is sufficient to recover a positive
-correlation; a window without a meaningful market drawdown would collapse the
-signal.
+Higher-volatility names drew down harder: that is the +0.79, and it is the
+plot a reader can make in two clicks. Volatility did not buy return on this
+window (Sharpe vs volatility is flat at −0.07).
 
-Financials top the v0.2 Sharpe table at +1.17 because the current window
-runs through a rally in which large-cap banks delivered the highest
-risk-adjusted excess return over the 4 % risk-free rate. Energy is lowest at
-+0.18 because oil-price volatility widened σ faster than drift. None of the
-sectors are negative on this window — a v0.1-style synthetic with injected
-shocks would produce negative Sharpes; a real bull-market window does not.
+Every sector's mean Sharpe is positive because the window is mostly a
+rally, but six of the 40 tickers lost money over it (ADBE, COP, UNH, MRK,
+PG, UPS) and carry negative Sharpe ratios. Financials lead at +1.18; Energy
+trails at +0.16, its oil-driven volatility outrunning its drift.
+
+The β number is kept as an outside check, not a tool result. It is positive
+because the one market-wide drawdown in the window (day 210 → 244) hit
+high-β names harder, but idiosyncratic volatility dilutes it, and a window
+without a market drawdown would weaken it further.
 
 ## Reproducing in the web tool
 
-*![Max drawdown vs beta (finance preset)](/docs-img/finance-scatter.png)*
+*![Max drawdown vs annualized volatility (finance preset)](/docs-img/finance-scatter.png)*
 
 ```
-Preset: finance
-Blocks: Stress–strain (color by sector) → Parameters → Parameter scatter (Y = Max drawdown, X = beta)
+Preset: finance   (or open /lab/finance, which applies this template)
+Blocks: Stress–strain (color by sector) → Parameters → Parameter scatter (Y = Max drawdown, X = Annualized volatility)
 ```
 
-1. Select the **finance** preset; the loader resolves `/data/finance.json`
-   via `loadDataset` in `src/lib/datasets.ts`.
-2. Add a **Stress–strain** block with `color by = sector`. Under v0.1 the
-   two injected shocks were visible near day 180 and day 330; on the
-   current v0.2 window the equal-weighted proxy drops ~17 % peak-to-trough
-   with the trough sitting near day 243, and there is no second
-   Energy-only event.
-3. Add a **Parameters** block and tick at minimum **Annualized return**,
-   **Annualized volatility**, **Sharpe ratio**, and **Max drawdown**
-   (`AnnReturn`, `AnnVol`, `Sharpe`, `MaxDD`). Once `registry.ts` is
-   updated, tick the new **Rolling volatility (mean)**, **EWMA
-   volatility (mean)**, and **Vol clustering index** columns as well. The
-   block computes one row per ticker.
-4. Add a **Parameter scatter**: Y = **Max drawdown**, X = **beta**, colour
-   by sector. On v0.1 the +0.73 correlation was immediately visible; on
-   the current v0.2 window the correlation is +0.48 — clearly positive but
-   with more scatter, reflecting that real market drawdowns expose high-β
-   names without the mechanical proportionality the v0.1 generator imposed.
-5. For Sharpe-by-sector, set Y = **Sharpe ratio** and X = `sector`, or
-   use a grouped strip plot.
-6. For the stylised-fact check, set Y = **Vol clustering index** and
-   X = `sector`. The values should scatter around zero with no sector
-   structure.
+1. Open `/lab/finance`, or pick **Finance** in the dataset picker. The
+   loader fetches `/data/finance.json`.
+2. A **Stress–strain** block with `color by = sector` overlays the 40
+   adjusted-close paths. The market-wide dip between days 210 and 244 is
+   visible as a common sag.
+3. A **Parameters** block lists one row per ticker with every registered
+   finance parameter: `AnnReturn`, `AnnVol`, `Sharpe`, `MaxDD`, `Skew`,
+   `ExKurt` and `VolCluster`.
+4. A **Parameter scatter** with Y = **Max drawdown**, X = **Annualized
+   volatility** shows the +0.79 relationship.
+5. For the stylised facts, set Y = **Excess kurtosis** or **Vol
+   clustering**: every point sits above zero.
+6. β is not reachable from the UI; see the next section.
 
-Since the dataset is seeded, re-running `npm run build:data` reproduces
-every number in this chapter.
+The dataset is a dated snapshot, not a seeded generator. Rebuilding it with
+`node scripts/build-finance.mjs` fetches a newer window and every number
+here will move; rerun `node scripts/chapter-numbers.mjs` afterwards and
+update this chapter from its output.
 
 ## Limitations
 
-- **No autocorrelation in returns.** Daily log returns are independent
-  GBM increments. Momentum or mean-reversion analyzers have zero expected
-  signal.
-- **No stochastic volatility.** σ is fixed per ticker; GARCH-style
-  clustering is absent, and `volClusteringIndex` confirms it.
-- **Diagonal sector structure.** Sector shocks are independent across
-  sectors; the only cross-sector coupling is through `m[i]`.
-- **No earnings or calendar effects.** No day-of-week, no end-of-quarter
-  drift, no announcements.
-- **Shocks are deterministic in timing.** The day-180 and day-330 events
-  are hard-coded windows rather than Poisson-distributed jumps.
+- **One snapshot window.** 504 business days, 2024-04-17 → 2026-04-21,
+  one market regime. Every number in this chapter is specific to that
+  window; a rebuild slides it forward and the numbers move.
+- **Selection.** 40 hand-picked, currently-listed US large caps. There is
+  no survivorship correction and nothing outside US equities.
+- **No covariates.** β, residual volatility and factor loadings need a
+  market series shared across tickers, which the schema cannot carry yet
+  (next section). The β number above is computed outside the tool.
+- **No colour or categorical axis on the scatter.** Sector comparisons
+  are read from the Parameters table, not plotted.
+- **Path functions have no registry row.** `rollingVolatility` and
+  `ewmaVolatility` return one value per day; the Parameters block only
+  shows scalars, so they are reachable from code, not from the UI.
+- **√252 annualisation assumes independent returns.** The positive
+  `volClusteringIndex` on every ticker says they are not quite; annualised
+  volatility is a convention here, not a model.
 - **EWMA is not a full conditional-variance model.** It has no leverage
   term, no volatility-of-volatility, no regime-switching, and no jump
   component. It is a one-parameter smoother of squared returns. GARCH(1,1)

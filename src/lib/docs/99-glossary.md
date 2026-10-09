@@ -90,13 +90,13 @@ Four deformation modes carried as a *metadata* column in the materials presets: 
 ## Finance
 
 ### Log return
-`rᵢ = ln(pᵢ / pᵢ₋₁)`. Time-additive and natural under *GBM*. Computed by `logReturns`.
+`rᵢ = ln(pᵢ / pᵢ₋₁)`. Time-additive: the sum over a window is the window's log return. Computed by `logReturns`.
 
 ### Sharpe ratio
-`(rₐ − rf) / σₐ`, the classical risk-adjusted return. Computed by `sharpeRatio` with a 4 % default risk-free rate.
+`(rₐ − rf) / σₐ`, the classical risk-adjusted return. Computed by `sharpeRatio` with a 4 % default *risk-free rate*.
 
 ### Beta
-Sensitivity of a ticker's log return to the market shock series. Stored as *metadata* in the finance preset and used as the X-axis of the canonical *max drawdown* scatter.
+Sensitivity of a ticker's returns to a market factor: the OLS slope of its returns on the market's. **Not** in the finance preset: the dataset carries no market series, so β cannot be computed in the tool yet. The finance chapter quotes an outside-the-tool β against the equal-weighted mean return and proposes the covariate schema that would make β an analyzer.
 
 ### Max drawdown
 Worst peak-to-trough fractional loss over a price path. Computed by `maxDrawdown`, which also returns `(peakIdx, troughIdx)` so the UI can annotate the curve.
@@ -104,87 +104,111 @@ Worst peak-to-trough fractional loss over a price path. Computed by `maxDrawdown
 ### Volatility
 Sample standard deviation of daily *log returns*, scaled by √252 to annualise. Computed by `annualizedVolatility`.
 
-### Geometric Brownian motion (GBM)
-Continuous-time stochastic process used by `scripts/build-finance.mjs` to synthesise prices. Each ticker is a GBM with idiosyncratic drift and volatility plus shared market and sector shocks.
+### Rolling volatility
+Annualised standard deviation of log returns over a moving window (default 21 trading days, centred). Computed per day by `rollingVolatility`; a path, not a scalar, so it has no registry row.
+
+### EWMA volatility
+Exponentially weighted volatility, `σ̂²(t) = λ·σ̂²(t−1) + (1 − λ)·r_t²`, annualised by √252. Recent returns weigh more, so it reacts to regime changes within days. Computed per day by `ewmaVolatility`; no registry row.
+
+### RiskMetrics λ
+The EWMA decay factor. RiskMetrics (J.P. Morgan, 1996) fixed λ = 0.94 for daily data, the default in `ewmaVolatility`. EWMA is GARCH(1,1) with ω = 0, α = 1 − λ, β = λ.
+
+### Volatility clustering
+Large moves tend to follow large moves. Measured by `volClusteringIndex` as the correlation between |r_t| and |r_{t−1}| (registry `VolCluster`); positive for all 40 tickers in the finance preset.
 
 ### Risk-free rate
-The baseline return subtracted from a ticker's mean return in the *Sharpe ratio* numerator. Fixed at 4 % per year in the finance preset (`riskFreeRate = 0.04` in `sharpeRatio`), consistent with a short-dated sovereign proxy rather than a live Treasury quote.
+The baseline return subtracted from a ticker's mean return in the *Sharpe ratio* numerator. Fixed at 4 % per year (`riskFreeRate = 0.04` in `sharpeRatio`), a short-dated sovereign proxy rather than a live Treasury quote.
 
-### Market shock
-A shared additive shock applied to *every* ticker's log-return path on a specific set of days. In the finance preset, a market-wide dip is injected over days 175–185 and is the mechanical source of the +0.73 β-vs-MaxDD correlation.
-
-### Sector shock
-An additive shock applied only to tickers in one sector. In the finance preset, an Energy-only shock is injected over days 325–335 so that sector-conditional *max drawdown* no longer collapses onto the market-β line.
-
-### Idiosyncratic β
-The ticker-specific sensitivity to the *market shock* series, drawn from a distribution centred on a sector-mean β with per-ticker jitter. Stored as `meta.beta`; the X-axis of the canonical **max drawdown vs β** scatter.
+### Sector
+The broad sector bucket in `meta.sector` (eight in the preset, e.g. Technology, Energy, Utilities). Used as a colour-by key on the price overlay.
 
 ### Skewness
 Third standardised moment of daily *log returns*, computed by `skewness` using the Joanes–Gill correction. Negative values indicate a heavier left tail — losses larger than mirror-image gains.
 
 ### Excess kurtosis
-Fourth standardised moment minus 3, computed by `kurtosis`. Positive values indicate heavier tails than a Gaussian; the finance preset's `ExKurt` column lets the scatter surface tail-heavy tickers.
+Fourth standardised moment minus 3, computed by `kurtosis`. Positive values indicate heavier tails than a Gaussian; every ticker in the finance preset is positive (`ExKurt`).
+
+### Geometric Brownian motion (GBM)
+The random-walk price model behind the v0.1 synthetic finance preset. The shipped preset is real data; GBM survives only as the reference model that real returns depart from (fat tails, clustering).
 
 ## Climate
 
 ### Annual mean
-Mean daily temperature over a 365-day window (or the full record). Computed by `annualMean`; the y-axis of the canonical latitude scatter.
+Mean daily temperature over the full record. Computed by `annualMean`; the y-axis of the canonical latitude scatter.
 
 ### Seasonal amplitude
-Half the peak-to-peak swing of the 365-day periodic component of the record. Computed by `seasonalAmplitude`; grows with latitude and continentality.
+Half the peak-to-peak swing of the annual cycle. Computed two ways: `seasonalAmplitude` from 12 pseudo-month bin means, and *harmonic amplitude* from the *harmonic fit*. Grows with latitude and *continentality*.
 
 ### Trend
-Linear slope of *annual mean* temperature over the record, in °C / year. Computed by `trendPerYear`.
+Linear slope of temperature over the record, in °C / year. `trendPerYear` fits a plain line and absorbs part of the seasonal cycle; `harmonicTrendPerYear` fits the line jointly with the cycle and is preferred.
+
+### Harmonic fit
+The model `T(t) = a + b·t + c·cos(ωt) + d·sin(ωt)` with ω = 2π/365, fitted by OLS in `fitHarmonicTrend`. Gives *harmonic amplitude* `√(c² + d²)` (registry `HarmAmp`), trend `b·365` (`HarmTrend`), *peak day* and R².
+
+### Peak day
+The day on which the fitted annual cycle peaks, `(atan2(d, c)/ω) mod 365`, from `fitHarmonicTrend`. Counted on the record's own day index (day 0 is the first day of the window), not the calendar.
 
 ### Poleward amplification
-The empirical tendency for warming *trend* to scale with |latitude|. Planted deliberately in the synthetic dataset so the scatter of trend against latitude recovers it.
+The observed tendency for warming to be stronger at high latitudes. Not recoverable from the three-year climate preset: neither trend estimator separates a ~0.1 °C/yr signal from weather noise at that length.
 
 ### Summer anomaly
-Departure of the *calendar-summer* mean from the full-record mean. Summer months are fixed by hemisphere — Jun–Aug for `'N'` and Dec–Feb for `'S'` — not chosen as the hottest quarter of the year. Computed by `summerAnomaly(series, hemisphere)`, which defaults to `'N'` when the station's `meta.hemisphere` is missing.
+Departure of the summer mean from the full-record mean. Summer is three pseudo-month bins fixed by hemisphere (bins 5–7 for `'N'`, 11, 0, 1 for `'S'`); the bins count from the first day of the record, so they match calendar Jun–Aug / Dec–Feb only for records starting on 1 January. Computed by `summerAnomaly(series, hemisphere)`, which defaults to `'N'` when `meta.hemisphere` is missing.
 
 ### Annual range
-Peak-to-trough span of the 365-day periodic component of a station's record — i.e. twice the *seasonal amplitude*. Used in the climate chapter as a secondary parameter when discussing continental vs coastal stations.
+Spread of the per-year means: split the record into consecutive 365-day years, take each year's mean, return max − min. Computed by `annualRange`; a measure of year-to-year drift, not of the seasonal swing.
 
 ### Extreme hot / cold days
 Count of days above (below) a threshold, computed by `extremeHotDays(series, threshold)` and `extremeColdDays(series, threshold)`. The climate preset ships `HotDays30` (days > 30 °C) and `ColdDays0` (days < 0 °C) as registry entries.
 
 ### Continentality
-A `meta` index describing how far a station sits from a large water body and therefore how thermally inertial its seasons are. High continentality → large *seasonal amplitude*; used as a secondary colour-by key in the climate chapter.
+How far a station is from the moderating influence of the ocean, and so how large its seasonal swing is for its latitude. Not a field in the dataset; the climate chapter uses it to explain why seasonal amplitude correlates only loosely with latitude.
 
 ### Altitude
-Station elevation in metres, carried as `meta.altitude`. Primarily a bias on *annual mean* through the environmental lapse rate; treated as metadata rather than an analyzer output.
+Station elevation in metres, `meta.altitude_m`. Lowers *annual mean* through the lapse rate; metadata, not an analyzer output. Amundsen–Scott carries GHCN's missing-value sentinel (−1000) in the shipped JSON.
 
 ### Hemisphere
-The `'N'` / `'S'` flag on each climate station's `meta`, used by `summerAnomaly` to decide which calendar months count as summer. Defaults to `'N'` when missing.
+The `'N'` / `'S'` flag on each climate station's `meta`, used by `summerAnomaly` to decide which bins count as summer. Defaults to `'N'` when missing.
+
+### GHCN-Daily
+NOAA's Global Historical Climatology Network — Daily, the public-domain station archive behind the climate preset.
 
 ## Battery
 
 ### State of health (SoH)
-Current discharge capacity divided by initial discharge capacity, as a percentage. The dependent variable of the canonical battery scatter.
+Current discharge capacity divided by initial discharge capacity. *Cycles to 80 % SoH* (`cyclesTo80Pct`) is the usual end-of-life definition.
 
 ### C-rate
-Discharge current expressed as a multiple of nominal capacity: 1 C empties the cell in one hour, 2 C in thirty minutes. A piece of *metadata* in the battery preset.
+Current expressed as a multiple of nominal capacity: 1 C fully charges or empties the cell in one hour, 4 C in fifteen minutes. In the battery preset `meta.nominal_c_rate_charge` is the **first-step charge** rate of the fast-charge *policy* (3.6–8 C).
+
+### Charging policy
+Severson's two-step fast-charge protocol string, e.g. `5.3C(54%)-4C`: charge at 5.3 C to 54 % state of charge, then at 4 C, followed by a standard discharge. In `meta.policy`; 27 distinct policies in the preset.
+
+### Cycle life
+The cycle at which a Severson cell's discharge capacity first falls below 0.88 Ah (80 % of its 1.1 Ah nominal). In `meta.cycle_life` (148–2 237 cycles); the y-axis of the canonical battery scatter.
+
+### Cell group (batch)
+Which of Severson's three test batches a cell was cycled in (`meta.cell_group`). Batch shifts cycle life more than C-rate does in this dataset.
 
 ### Cycle
-One full charge-and-discharge pair. The battery *series* is indexed by cycle rather than wall-clock time.
+One full charge-and-discharge pair. The battery *series* is indexed by cycle rather than wall-clock time; the shipped window is index 0–98, Severson cycles 2–100.
 
 ### Knee (in cycling)
-A sharp acceleration in *capacity fade* after an initially gentle decay. The synthesis script injects a knee into roughly a quarter of cells; `kneeCycle` reports its cycle index.
+A sharp acceleration in *capacity fade* after an initially gentle decay. `kneeCycle` looks for one with a two-segment fit; on the shipped early-life window it flags 18 of 124 cells, which are early slope changes rather than the end-of-life knee.
 
-### Cathode chemistry codes
-- **NMC811** — LiNi₀.₈Mn₀.₁Co₀.₁O₂; high nickel, high energy density, fades faster.
-- **NMC622** — LiNi₀.₆Mn₀.₂Co₀.₂O₂; balanced chemistry.
-- **NCA** — LiNi₀.₈Co₀.₁₅Al₀.₀₅O₂; automotive-favoured, sensitive to high *C-rate*.
-- **LFP** — LiFePO₄; lower energy density, very long cycle life.
+### Cathode chemistry
+`meta.cathode_chemistry`. Every cell in the preset is **LFP** (LiFePO₄ cathode, graphite anode; A123 APR18650M1A): lower energy density than nickel-rich chemistries, very long cycle life.
 
 ### Capacity fade
-Monotonic loss of discharge capacity with *cycle* number. Modelled in the synthesis script as a stretched exponential plus an optional *knee*; summarised per cell by `fadePerCycle` and `cyclesTo80Pct`.
+Loss of discharge capacity with *cycle* number, in Ah. Summarised per cell by `fadePerCycle` (Ah/cycle), `cyclesTo80Pct`, and the *stretched exponential* fit.
 
 ### Stretched exponential
-The functional form `C(n) = C₀ · exp(−k · n^α) − β · n` used to model *capacity fade* before any *knee*. The stretching exponent α < 1 gives the early-life plateau; the linear β · n term represents a slow calendar-age drift.
+The fade model `C(n) = C₀ · exp(−k · n^α)`, fitted by `fitStretchedExp` through the log-log linearisation `ln ln(C₀/C(n)) = ln k + α ln n` (closed-form OLS; needs n ≥ 1 and C(n) < C₀). Weak on early-life data where capacity barely moves.
+
+### Fade exponent α
+The stretching exponent of the *stretched exponential*, from `fadeExponent` (registry `FadeExp`). α < 1: fade decelerates; α > 1: fade accelerates.
 
 ### Rate constant k
-The exponential-decay coefficient in the *stretched exponential* fade model. Larger `k` means faster early-life fade; the synthesis script tunes `k` per chemistry and *C-rate* so that high C-rate NCA cells fade visibly faster than 1 C LFP cells.
+The coefficient `k` of the *stretched exponential*, from `fadeRateConstant` (registry `FadeK`), in cycle^(−α). Because its units depend on α, compare k only between cells with similar α.
 
 ### Retention
-Discharge capacity at a chosen cycle, expressed as a fraction of `C₀`. Computed by `retentionAt(series, cycle)` with nearest-neighbour lookup (no interpolation); the registry currently exposes the fixed-cycle entry `Ret500` (retention at cycle 500).
+Discharge capacity at a chosen cycle, as a fraction of `C₀`. Computed by `retentionAt(series, cycle)` with nearest-neighbour lookup and no extrapolation; the registry's fixed `Ret500` (retention at cycle 500) is blank on the 99-cycle preset.
