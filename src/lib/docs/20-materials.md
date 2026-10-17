@@ -607,7 +607,7 @@ expressible without touching source today.
   Source of basic-usage, CS1 and CS2. The Basic Usage cross-check compares
   against this paper's reported properties, redistributed as
   `aakash results.xlsx` in `dan-slater/paramaterial-examples`.
-- Shanle Baron, S. G. (2018). *Hulamin Progress Report.* Technical report,
+- S. G. Shanle Baron (2018). *Hulamin Progress Report.* Technical report,
   University of Cape Town. Source of the CS3 uniaxial compression data.
 - Hyde, C. K. (2015). *Critical analysis of simulated thermomechanical
   processing of aluminium can body stock.* MSc thesis, University of Cape

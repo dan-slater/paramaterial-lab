@@ -42,7 +42,7 @@ source if you use a preset's numbers.
   temperatures under uniaxial and plane strain tension. *Data in Brief* 25,
   104085. <https://doi.org/10.1016/j.dib.2019.104085>. Data:
   <https://doi.org/10.17632/rd6jm9tyb6.2>.
-- **Materials, CS3:** Shanle Baron, S. G. (2018). *Hulamin Progress Report.*
+- **Materials, CS3:** S. G. Shanle Baron (2018). *Hulamin Progress Report.*
   Technical report, University of Cape Town. AA3104 uniaxial compression on
   the Gleeble 3800 at the Centre for Materials Engineering.
 - **Materials, CS4:** Hyde, C. K. (2015). *Critical analysis of simulated
