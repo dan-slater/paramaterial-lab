@@ -15,6 +15,10 @@ to show that the workflow, not the metallurgy, is the reusable part. You build a
 report out of blocks (dataset, series plot, parameters table, parameter scatter,
 model fits, notes), and every analyzer runs in your browser.
 
+The Python package is on PyPI (`pip install paramaterial`), and the thesis
+notebooks with their data are in
+[paramaterial-examples](https://github.com/dan-slater/paramaterial-examples).
+
 ## Presets
 
 Each preset has a shareable URL that opens it with its report template.

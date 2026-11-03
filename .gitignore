@@ -16,3 +16,6 @@ data/
 # editor state
 .idea/
 .vscode/
+
+# README media renders
+scripts/readme-media/out/

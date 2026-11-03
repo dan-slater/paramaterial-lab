@@ -1,0 +1,70 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0b0a09; --panel: #15130f; --ink: #efece4; --muted: #a8a196; --line: #2a2620; --accent: #e879f9; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Inter, sans-serif; }
+  .noise { position: absolute; inset: 0; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); pointer-events: none; }
+  .brand { display: flex; align-items: center; gap: 14px; font-weight: 500; font-size: 22px; color: var(--muted); letter-spacing: -0.01em; }
+  .sq { width: 40px; height: 40px; border-radius: 9px; background: linear-gradient(135deg, #e879f9, #a21caf); flex: none; }
+  h1 { font-family: "Source Serif 4", serif; font-weight: 600; letter-spacing: -0.015em; line-height: 1.05; }
+  .tag { font-family: "Source Serif 4", serif; font-style: italic; color: var(--muted); line-height: 1.35; }
+  .foot { font-size: 21px; color: var(--muted); font-weight: 500; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .kicker { font-size: 15px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  .card img { display: block; width: 100%; }
+  .card .lbl { padding: 14px 20px 0; }
+
+  /* P1 split */
+  .p1 { position: absolute; inset: 0; display: grid; grid-template-columns: 470px 1fr; gap: 40px; padding: 64px 56px 64px 72px; align-items: center; }
+  .p1 .text { display: flex; flex-direction: column; gap: 28px; }
+  .p1 h1 { font-size: 64px; }
+  .p1 .tag { font-size: 27px; }
+  .p1 .card { padding: 10px 6px 4px; }
+
+  /* P2 story: curves -> scatter */
+  .p2 { position: absolute; inset: 0; padding: 52px 64px; display: flex; flex-direction: column; gap: 26px; }
+  .p2 .top { display: flex; align-items: baseline; justify-content: space-between; gap: 40px; }
+  .p2 h1 { font-size: 50px; }
+  .p2 .tag { font-size: 24px; max-width: 760px; margin-top: 10px; }
+  .p2 .row { display: grid; grid-template-columns: 1fr 64px 1fr; align-items: center; flex: 1; min-height: 0; }
+  .p2 .arrow { text-align: center; font-size: 40px; color: var(--accent); }
+  .p2 .card { height: 100%; display: flex; flex-direction: column; }
+  .p2 .card img { flex: 1; min-height: 0; object-fit: contain; padding: 4px 6px 6px; }
+  .p2 .foot { display: flex; justify-content: space-between; }
+
+  /* P3 typographic over faint curves */
+  .p3 { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 96px; gap: 30px; }
+  .bgcurves { position: absolute; right: -40px; top: 50%; transform: translateY(-50%); width: 860px; opacity: .30; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 45%); mask-image: linear-gradient(90deg, transparent 0, #000 45%); }
+  .p3 h1 { font-size: 92px; position: relative; }
+  .p3 .tag { font-size: 30px; max-width: 760px; position: relative; }
+  .p3 .brand, .p3 .foot { position: relative; }
+  .p3 .foot { margin-top: 18px; }
+</style></head>
+<body>
+<div id="root"></div>
+<div class="noise"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const opt = q.get('opt') || 'p1', repo = q.get('repo') || 'lab';
+const T = {
+  lab: { name: 'paramaterial lab', h1: 'paramaterial lab',
+    tag: 'Reduce each series to a few parameters, then scatter them against the conditions it was recorded under.',
+    foot: '<b>paramaterial.danielslater.dev</b> · materials · finance · climate' },
+  pkg: { name: 'paramaterial', h1: 'paramaterial',
+    tag: 'Batch-process stress–strain test data in Python: modulus, proof stress and UTS for every test, then fit models to them.',
+    foot: '<b>pip install paramaterial</b> · MIT · Python 3.9+' },
+}[repo];
+const brand = `<div class="brand"><div class="sq"></div>${repo === 'lab' ? 'dan-slater / paramaterial-lab' : 'dan-slater / paramaterial'}</div>`;
+const R = document.getElementById('root');
+if (opt === 'p1') R.innerHTML = `<div class="p1"><div class="text">${brand}<h1>${T.h1}</h1><div class="tag">${T.tag}</div><div class="foot">${T.foot}</div></div>
+  <div class="card"><img src="out/curves.png"></div></div>`;
+if (opt === 'p2') R.innerHTML = `<div class="p2"><div class="top"><div><h1>${T.h1}</h1><div class="tag">${T.tag}</div></div><div class="sq" style="width:56px;height:56px;border-radius:12px"></div></div>
+  <div class="row"><div class="card"><div class="lbl kicker">154 tensile tests</div><img src="out/curves.png"></div><div class="arrow">→</div>
+  <div class="card"><div class="lbl kicker">0.2% proof stress vs temperature</div><img src="out/scatter.png"></div></div>
+  <div class="foot"><span>${T.foot}</span></div></div>`;
+if (opt === 'p3') R.innerHTML = `<img class="bgcurves" src="out/curves.png"><div class="p3">${brand}<h1>${T.h1}</h1><div class="tag">${T.tag}</div><div class="foot">${T.foot}</div></div>`;
+</script>
+</body></html>
