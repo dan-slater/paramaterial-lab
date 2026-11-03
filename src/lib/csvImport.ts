@@ -12,6 +12,11 @@
  * Any other column whose value is constant within a series becomes metadata
  * (numeric when every value parses as a number), which is what the colour-by
  * and parameter-scatter blocks group on.
+ *
+ * An info table can be dropped with the series files, the way paramaterial
+ * pairs a data folder with `info.csv`: one row per series, a `test_id` column
+ * naming each series (the file name without .csv), and any other columns
+ * (temperature, lot, rate…), which are joined onto each series as metadata.
  */
 import type { Dataset, Domain, Test, TestMeta } from '$lib/datasets';
 
@@ -134,8 +139,65 @@ export function guessDomain(headers: string[]): Domain {
 	return 'materials';
 }
 
-function stripExt(name: string): string {
+export function stripExt(name: string): string {
 	return name.replace(/\.(csv|tsv|txt)$/i, '');
+}
+
+const INFO_KEY = /^test_?id$/i;
+
+/** The key column of an info table: a test_id column with one row per id. */
+export function infoKey(table: ParsedTable): string | null {
+	const key = table.headers.find((h) => INFO_KEY.test(h));
+	if (!key) return null;
+	const col = table.headers.indexOf(key);
+	const ids = table.rows.map((r) => r[col]);
+	return new Set(ids).size === ids.length ? key : null;
+}
+
+/** Series ids the tables will produce under a mapping (before de-duplication). */
+function seriesIds(tables: ParsedTable[], map: ColumnMapping | null): Set<string> {
+	const ids = new Set<string>();
+	for (const t of tables) {
+		const c = map?.id ? t.headers.indexOf(map.id) : -1;
+		if (c >= 0) for (const r of t.rows) ids.add(r[c]);
+		else ids.add(stripExt(t.fileName));
+	}
+	return ids;
+}
+
+/** Split dropped files into series tables and at most one info table. A file is
+ *  the info table only when other files came with it and its test_id values name
+ *  some of their series (a file name, or a value in their own test_id column). */
+export function splitInfo(tables: ParsedTable[]): { data: ParsedTable[]; info: ParsedTable | null } {
+	if (tables.length < 2) return { data: tables, info: null };
+	for (const t of tables) {
+		const key = infoKey(t);
+		if (!key) continue;
+		const rest = tables.filter((o) => o !== t);
+		const names = seriesIds(rest, null);
+		for (const o of rest) {
+			const c = o.headers.indexOf(key);
+			if (c >= 0) for (const r of o.rows) names.add(r[c]);
+		}
+		const col = t.headers.indexOf(key);
+		if (t.rows.some((r) => names.has(r[col]))) return { data: rest, info: t };
+	}
+	return { data: tables, info: null };
+}
+
+/** How many of the series an info table has a row for. */
+export function countInfoMatches(tables: ParsedTable[], map: ColumnMapping, info: ParsedTable): number {
+	const key = infoKey(info);
+	if (!key) return 0;
+	const col = info.headers.indexOf(key);
+	const known = new Set(info.rows.map((r) => r[col]));
+	return [...seriesIds(tables, map)].filter((id) => known.has(id)).length;
+}
+
+/** "a.csv, b.csv" for a few files, "154 files (a.csv … z.csv)" for many. */
+export function describeFiles(names: string[]): string {
+	if (names.length <= 3) return names.join(', ');
+	return `${names.length} files (${names[0]} … ${names[names.length - 1]})`;
 }
 
 /** Build series from one table under a mapping. */
@@ -195,11 +257,13 @@ function tableToTests(table: ParsedTable, map: ColumnMapping): Test[] {
 	return tests;
 }
 
-/** Turn parsed tables into one Dataset. Series ids are made unique across files. */
+/** Turn parsed tables into one Dataset. Series ids are made unique across files.
+ *  With an info table, its columns are joined onto each series by test_id. */
 export function buildDataset(
 	tables: ParsedTable[],
 	map: ColumnMapping,
-	domain: Domain
+	domain: Domain,
+	info: ParsedTable | null = null
 ): Dataset {
 	const tests: Test[] = [];
 	const seen = new Map<string, number>();
@@ -216,16 +280,34 @@ export function buildDataset(
 		throw new Error('No series with at least two numeric points were found. Check the column mapping.');
 	}
 
+	const key = info ? infoKey(info) : null;
+	let joined = 0;
+	if (info && key) {
+		const kc = info.headers.indexOf(key);
+		const byId = new Map(info.rows.map((r) => [r[kc], r]));
+		for (const test of tests) {
+			const row = byId.get(test.test_id);
+			if (!row) continue;
+			joined++;
+			delete test.meta.file;
+			info.headers.forEach((h, i) => {
+				const v = row[i] ?? '';
+				if (i !== kc && v !== '') test.meta[h] = isNumeric(v) ? Number(v) : v;
+			});
+		}
+	}
+
 	// info_columns: test_id first, then every meta key in first-seen order.
 	const metaKeys: string[] = [];
 	for (const t of tests) for (const k of Object.keys(t.meta)) if (!metaKeys.includes(k)) metaKeys.push(k);
 
 	const files = tables.map((t) => t.fileName);
 	const points = tests.reduce((n, t) => n + t.strain.length, 0);
+	const withInfo = info ? ` Metadata from ${info.fileName} for ${joined} of ${tests.length} series.` : '';
 	return {
 		id: 'upload',
 		name: files.length === 1 ? stripExt(files[0]) : `${files.length} uploaded files`,
-		description: `Imported in the browser from ${files.join(', ')}: ${tests.length} series, ${points.toLocaleString()} points.`,
+		description: `Imported in the browser from ${describeFiles(files)}: ${tests.length} series, ${points.toLocaleString()} points.${withInfo}`,
 		info_columns: ['test_id', ...metaKeys],
 		tests,
 		domain,

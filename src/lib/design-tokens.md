@@ -108,8 +108,8 @@ These swap between themes via `[data-theme]` selectors in `app.css`.
 
 ## Theme toggle
 
-`document.documentElement` carries `data-theme="dark"` (default) or
-`data-theme="light"`. Choice persists in `localStorage` under
+`document.documentElement` carries `data-theme="light"` (default) or
+`data-theme="dark"`. Choice persists in `localStorage` under
 `paramaterial:theme:v1`. Applied before first paint via a tiny inline script in
 `app.html` to prevent flash.
 

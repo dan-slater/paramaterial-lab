@@ -75,6 +75,11 @@ uploaded. Two layouts work:
 - **Long format:** an id column plus x and y, e.g. `station,day,tavg_C,latitude`.
   Each distinct id becomes a series.
 
+To add metadata to one-series-per-file data, drop an `info.csv` with the files,
+the way the paramaterial package pairs a data folder with its info table: one row
+per series and a `test_id` column holding each file name without `.csv`. Its
+other columns (temperature, lot, rate) are joined onto the series.
+
 Any other column with one value per series (temperature, lot, sector, latitude)
 becomes metadata you can colour by or scatter against. Comma, semicolon and tab
 separators are detected; date x columns become days since the first date; with

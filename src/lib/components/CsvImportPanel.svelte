@@ -6,10 +6,14 @@
 	import type { Domain } from '$lib/datasets';
 	import {
 		buildDataset,
+		countInfoMatches,
+		describeFiles,
 		guessDomain,
 		guessMapping,
 		MAX_IMPORT_BYTES,
+		infoKey,
 		parseCsv,
+		splitInfo,
 		type ColumnMapping,
 		type ParsedTable
 	} from '$lib/csvImport';
@@ -28,6 +32,7 @@
 	];
 
 	let tables = $state<ParsedTable[]>([]);
+	let info = $state<ParsedTable | null>(null);
 	let mapping = $state<ColumnMapping>({ x: null, y: '', id: null });
 	let domain = $state<Domain>('materials');
 	let error = $state<string | null>(null);
@@ -41,6 +46,9 @@
 			: []
 	);
 	const rowCount = $derived(tables.reduce((n, t) => n + t.rows.length, 0));
+	const infoColumns = $derived(info ? info.headers.filter((h) => h !== infoKey(info!)) : []);
+	const infoMatches = $derived(info ? countInfoMatches(tables, mapping, info) : 0);
+	const seriesCount = $derived(mapping.id ? null : tables.length);
 
 	async function stage(files: Array<{ name: string; text: () => Promise<string>; size: number }>) {
 		error = null;
@@ -54,11 +62,15 @@
 				}
 				parsed.push(parseCsv(await f.text(), f.name));
 			}
-			tables = parsed;
-			mapping = guessMapping(parsed[0]);
-			domain = guessDomain(parsed[0].headers);
+			const split = splitInfo(parsed);
+			if (!split.data.length) throw new Error('Only an info table was dropped. Drop the series CSVs with it.');
+			tables = split.data;
+			info = split.info;
+			mapping = guessMapping(split.data[0]);
+			domain = guessDomain(split.data[0].headers);
 		} catch (e) {
 			tables = [];
+			info = null;
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
 			busy = false;
@@ -91,8 +103,9 @@
 	function commit() {
 		error = null;
 		try {
-			datasetStore.set(buildDataset(tables, mapping, domain));
+			datasetStore.set(buildDataset(tables, mapping, domain, info));
 			tables = [];
+			info = null;
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		}
@@ -157,6 +170,11 @@
 					</li>
 				</ul>
 				<p>
+					<strong>Info table</strong>: drop an <code>info.csv</code> with the series files, as in
+					paramaterial: one row per series and a <code>test_id</code> column with each file name
+					(no <code>.csv</code>). Its other columns, such as temperature or lot, are joined on.
+				</p>
+				<p>
 					Any other column that holds one value per series (temperature, lot, sector, latitude…)
 					becomes metadata you can colour by or scatter against. An x column of dates
 					(<code>2024-01-31</code>) becomes days since the first date. With no x column, the row
@@ -175,8 +193,13 @@
 			data-testid="csv-mapping"
 		>
 			<p style="color: var(--text-secondary);">
-				{tables.map((t) => t.fileName).join(', ')} · {rowCount.toLocaleString()} rows
+				{describeFiles(tables.map((t) => t.fileName))} · {rowCount.toLocaleString()} rows
 			</p>
+			{#if info}
+				<p class="mt-1 text-xs" style="color: var(--text-secondary);" data-testid="csv-info">
+					{info.fileName} adds {infoColumns.join(', ')} to {infoMatches}{seriesCount === null ? '' : ` of ${seriesCount}`} series, matched on {infoKey(info)}.
+				</p>
+			{/if}
 			<div class="mt-3 grid gap-3 sm:grid-cols-2">
 				<label class="text-xs" style="color: var(--text-muted);">
 					x column
@@ -219,6 +242,7 @@
 					style="border-color: var(--border-default); color: var(--text-secondary);"
 					onclick={() => {
 						tables = [];
+						info = null;
 						error = null;
 					}}>Cancel</button
 				>

@@ -16,7 +16,7 @@
 	let authOpen = $state(false);
 
 	const THEME_KEY = 'paramaterial:theme:v1';
-	let theme = $state<'dark' | 'light'>('dark');
+	let theme = $state<'dark' | 'light'>('light');
 
 	function applyTheme(t: 'dark' | 'light') {
 		theme = t;
@@ -43,7 +43,7 @@
 
 	onMount(() => {
 		const attr = document.documentElement.getAttribute('data-theme');
-		theme = attr === 'light' ? 'light' : 'dark';
+		theme = attr === 'dark' ? 'dark' : 'light';
 	});
 </script>
 

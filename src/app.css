@@ -4,7 +4,7 @@
 /* ---------------------------------------------------------------------------
    paramaterial · lab-report design system
    --------------------------------------------------------------------------
-   - Dark default, light (paper) alternative via `[data-theme='light']`.
+   - Light (paper) default, dark alternative via `[data-theme='dark']`.
    - Serif for long-form / titles / figure captions (Source Serif 4).
    - Sans (Inter) for UI chrome.
    - Plasma reserved for data viz. UI chrome uses a warm slate accent.
@@ -78,6 +78,25 @@
 
 /* ---- semantic theme surfaces (referenced from components) ---- */
 :root,
+[data-theme='light'] {
+	color-scheme: light;
+	--surface-page: #faf8f3;
+	--surface-raised: #f3efe4;
+	--surface-sunk: #ffffff;
+	--surface-card: #fffdf7;
+	--surface-card-hover: #f7f3e8;
+	--surface-chip: #efeadb;
+	--border-default: rgb(60 50 30 / 0.14);
+	--border-strong: rgb(60 50 30 / 0.25);
+	--text-primary: #1b1a15;
+	--text-secondary: #4e4a3d;
+	--text-muted: #807a68;
+	--text-subtle: #a8a290;
+	--accent-ui: var(--color-chrome-600);
+	--accent-ui-strong: var(--color-chrome-700);
+	--paper-texture: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
 [data-theme='dark'] {
 	color-scheme: dark;
 	--surface-page: #0b0a09;
@@ -98,24 +117,6 @@
 	--paper-texture: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
-[data-theme='light'] {
-	color-scheme: light;
-	--surface-page: #faf8f3;
-	--surface-raised: #f3efe4;
-	--surface-sunk: #ffffff;
-	--surface-card: #fffdf7;
-	--surface-card-hover: #f7f3e8;
-	--surface-chip: #efeadb;
-	--border-default: rgb(60 50 30 / 0.14);
-	--border-strong: rgb(60 50 30 / 0.25);
-	--text-primary: #1b1a15;
-	--text-secondary: #4e4a3d;
-	--text-muted: #807a68;
-	--text-subtle: #a8a290;
-	--accent-ui: var(--color-chrome-600);
-	--accent-ui-strong: var(--color-chrome-700);
-	--paper-texture: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
 
 /* ------------------------------ base ---------------------------------- */
 
