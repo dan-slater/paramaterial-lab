@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { useBlockDataset } from '$lib/stores/pipeline.svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import StressStrainPlot from '$lib/components/StressStrainPlot.svelte';
 	import { findUplLpl } from '$lib/processing';
@@ -12,12 +12,15 @@
 
 	let { id, config }: Props = $props();
 
+	// The dataset as processed by any Trim / Foot correction / Screen block above.
+	const data = useBlockDataset();
+
 	let colorBy = $state((config.colorBy as string) ?? '');
 	let showOffset = $state<boolean>((config.showOffset as boolean) ?? false);
 	let hiddenGroups = $state<Set<string>>(new Set());
-	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
-	const tests = $derived(datasetStore.current?.tests ?? []);
-	const labels = $derived(getSeriesLabels(datasetStore.current));
+	const infoColumns = $derived(data.current?.info_columns ?? []);
+	const tests = $derived(data.current?.tests ?? []);
+	const labels = $derived(getSeriesLabels(data.current));
 	const xLabel = $derived(labels.x);
 	const yLabel = $derived(labels.y);
 

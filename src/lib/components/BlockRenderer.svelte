@@ -6,6 +6,9 @@
 	import DatasetPickerBlock from './blocks/DatasetPickerBlock.svelte';
 	import StressStrainBlock from './blocks/StressStrainBlock.svelte';
 	import FootCorrectionBlock from './blocks/FootCorrectionBlock.svelte';
+	import TrimBlock from './blocks/TrimBlock.svelte';
+	import ScreenBlock from './blocks/ScreenBlock.svelte';
+	import { provideBlockDataset } from '$lib/stores/pipeline.svelte';
 	import PropertyTableBlock from './blocks/PropertyTableBlock.svelte';
 	import RepresentativeCurvesBlock from './blocks/RepresentativeCurvesBlock.svelte';
 	import ScatterBlock from './blocks/ScatterBlock.svelte';
@@ -22,6 +25,9 @@
 
 	let { block, index }: Props = $props();
 
+	// Blocks read the dataset as processed by the blocks above this one.
+	provideBlockDataset(() => index);
+
 	const isDatasetPicker = $derived(block.type === 'dataset-picker');
 	const total = $derived(blocksStore.list.length);
 
@@ -29,7 +35,9 @@
 	function categoryOf(t: Block['type']): 'figure' | 'table' | 'note' | 'header' {
 		switch (t) {
 			case 'stress-strain':
+			case 'trim':
 			case 'foot-correction':
+			case 'screen':
 			case 'representative-curves':
 			case 'scatter':
 			case 'ramberg-osgood':
@@ -84,8 +92,12 @@
 		<DatasetPickerBlock />
 	{:else if block.type === 'stress-strain'}
 		<StressStrainBlock id={block.id} config={block.config} />
+	{:else if block.type === 'trim'}
+		<TrimBlock id={block.id} config={block.config} />
 	{:else if block.type === 'foot-correction'}
 		<FootCorrectionBlock id={block.id} config={block.config} />
+	{:else if block.type === 'screen'}
+		<ScreenBlock id={block.id} config={block.config} />
 	{:else if block.type === 'property-table'}
 		<PropertyTableBlock id={block.id} config={block.config} />
 	{:else if block.type === 'representative-curves'}

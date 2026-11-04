@@ -344,9 +344,10 @@
 			<div class="mt-0.5 tabular-nums" style="color: var(--text-secondary);">
 				ε = {tooltipState.strain.toPrecision(4)}, σ = {tooltipState.stress.toFixed(1)} MPa
 			</div>
-			{#if Object.keys(tooltipState.test.meta).length}
+			{#if Object.keys(tooltipState.test.meta).some((k) => !k.startsWith('pm:'))}
 				<div class="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
-					{#each Object.entries(tooltipState.test.meta) as [k, v]}
+					<!-- pm:* are values a processing block carried; not shown as metadata. -->
+					{#each Object.entries(tooltipState.test.meta).filter(([k]) => !k.startsWith('pm:')) as [k, v]}
 						<span style="color: var(--text-muted);">{k}</span>
 						<span class="truncate" style="color: var(--text-primary);">{formatMetaValue(v)}</span>
 					{/each}

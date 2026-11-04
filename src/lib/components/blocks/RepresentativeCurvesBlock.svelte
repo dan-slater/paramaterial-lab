@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import uPlot from 'uplot';
-	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { useBlockDataset } from '$lib/stores/pipeline.svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import { computeRepresentative } from '$lib/processing';
 	import { getPlotTheme } from '$lib/plotTheme';
@@ -14,9 +14,12 @@
 
 	let { id, config }: Props = $props();
 
-	const tests = $derived(datasetStore.current?.tests ?? []);
-	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
-	const labels = $derived(getSeriesLabels(datasetStore.current));
+	// The dataset as processed by any Trim / Foot correction / Screen block above.
+	const data = useBlockDataset();
+
+	const tests = $derived(data.current?.tests ?? []);
+	const infoColumns = $derived(data.current?.info_columns ?? []);
+	const labels = $derived(getSeriesLabels(data.current));
 	const xLabel = $derived(labels.x);
 	const yLabel = $derived(labels.y);
 	let groupBy = $state((config.groupBy as string) ?? '');

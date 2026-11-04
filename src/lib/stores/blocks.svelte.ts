@@ -3,7 +3,9 @@ import { loadJSON, saveJSONDebounced, STORAGE_KEYS } from './persistence';
 export type BlockType =
 	| 'dataset-picker'
 	| 'stress-strain'
+	| 'trim'
 	| 'foot-correction'
+	| 'screen'
 	| 'property-table'
 	| 'representative-curves'
 	| 'scatter'
@@ -133,6 +135,9 @@ export const blocksStore = {
 	}
 };
 
+/** Processing tools: offered for stress–strain (materials) data only. */
+export const PROCESSING_TOOL_TYPES: BlockType[] = ['trim', 'screen'];
+
 export const TOOLS: Array<{ type: BlockType; label: string; description: string; icon: string }> = [
 	{
 		type: 'stress-strain',
@@ -141,10 +146,22 @@ export const TOOLS: Array<{ type: BlockType; label: string; description: string;
 		icon: '∿'
 	},
 	{
+		type: 'trim',
+		label: 'Trim',
+		description: 'Keep a strain window, drop points under a stress floor, or cut at UTS or fracture. Changes the data for every block below.',
+		icon: '⇥'
+	},
+	{
 		type: 'foot-correction',
 		label: 'Foot correction',
 		description: 'Find UPL/LPL, fit E, shift curves to zero-strain.',
 		icon: '⊥'
+	},
+	{
+		type: 'screen',
+		label: 'Screen',
+		description: 'One small plot per test; tap to reject. Rejected tests are left out of every block below.',
+		icon: '☐'
 	},
 	{
 		type: 'property-table',

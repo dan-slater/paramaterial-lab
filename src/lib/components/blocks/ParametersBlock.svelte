@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { useBlockDataset } from '$lib/stores/pipeline.svelte';
 	import { getParameterDefs } from '$lib/analyzers/registry';
 
 	interface Props {
@@ -9,9 +9,12 @@
 
 	let { id, config }: Props = $props();
 
-	const tests = $derived(datasetStore.current?.tests ?? []);
-	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
-	const domain = $derived(datasetStore.current?.domain);
+	// The dataset as processed by any Trim / Foot correction / Screen block above.
+	const data = useBlockDataset();
+
+	const tests = $derived(data.current?.tests ?? []);
+	const infoColumns = $derived(data.current?.info_columns ?? []);
+	const domain = $derived(data.current?.domain);
 	const params = $derived(getParameterDefs(domain));
 
 	let expanded = $state(false);

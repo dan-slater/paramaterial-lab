@@ -126,8 +126,8 @@ These swap between themes via `[data-theme]` selectors in `app.css`.
 - **`caption-eyebrow` before every block.** Sets the "FIGURE 3 · STRESS–STRAIN"
   small-caps pattern. The figure number itself is emitted by `BlockRenderer`.
 - **Numbered captions.** BlockRenderer categorises each block:
-  - `stress-strain`, `foot-correction`, `representative-curves`, `scatter`,
-    `ramberg-osgood`, `zener-hollomon` → **Figure N**
+  - `stress-strain`, `trim`, `foot-correction`, `screen`, `representative-curves`,
+    `scatter`, `ramberg-osgood`, `zener-hollomon` → **Figure N**
   - `property-table`, `dataset-summary` → **Table N**
   - `note` → **Note N**
 

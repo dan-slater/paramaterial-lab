@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { datasetStore } from '$lib/stores/dataset.svelte';
-	import { findUTS, findUplLpl, findE, findProofStress } from '$lib/processing';
+	import { useBlockDataset } from '$lib/stores/pipeline.svelte';
+	import { findProofStress } from '$lib/processing';
+	import { modulusOf, utsOf } from '$lib/pipeline';
 	import type { Test } from '$lib/datasets';
 
 	interface Props {
@@ -10,8 +11,11 @@
 
 	let { id, config }: Props = $props();
 
-	const tests = $derived(datasetStore.current?.tests ?? []);
-	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
+	// The dataset as processed by any Trim / Foot correction / Screen block above.
+	const data = useBlockDataset();
+
+	const tests = $derived(data.current?.tests ?? []);
+	const infoColumns = $derived(data.current?.info_columns ?? []);
 
 	interface Row {
 		test_id: string;
@@ -25,14 +29,15 @@
 		const out: Row[] = [];
 		for (const t of tests) {
 			try {
-				const foot = findUplLpl({ strain: t.strain, stress: t.stress });
-				const uts = findUTS({ strain: t.strain, stress: t.stress });
-				const ps = findProofStress({ strain: t.strain, stress: t.stress }, foot.E);
+				// Same functions as before; values a Trim / Foot correction block above
+				// carried (pre-trim UTS, foot-fit E) take precedence, as in the notebook.
+				const c = { strain: t.strain, stress: t.stress };
+				const E = modulusOf(c, t.meta);
 				out.push({
 					test_id: t.test_id,
-					UTS: uts.UTS,
-					E: foot.E,
-					PS: ps.proofStress,
+					UTS: utsOf(c, t.meta),
+					E,
+					PS: findProofStress(c, E).proofStress,
 					meta: t.meta
 				});
 			} catch {
@@ -55,7 +60,7 @@
 		Per-test UTS, E, 0.2% proof stress
 	</h2>
 	<p class="caption-note mt-1 text-sm" style="color: var(--text-secondary);">
-		Computed in-browser from the raw curves — {rows.length} tests analyzed.
+		Computed in-browser from the {data.stagesAbove ? 'processed' : 'raw'} curves — {rows.length} tests analyzed.
 	</p>
 </div>
 

@@ -2,7 +2,7 @@ import type { Domain } from '$lib/datasets';
 import * as finance from './finance';
 import * as climate from './climate';
 import * as battery from './battery';
-import { findUTS, findUplLpl, findProofStress } from '$lib/processing';
+import { utsOf, modulusOf, proofStressOf } from '$lib/pipeline';
 
 type Series = { strain: number[]; stress: number[] };
 export type ParameterExtractor = (s: Series, meta?: Record<string, unknown>) => number | null;
@@ -30,19 +30,19 @@ const materialsParams: ParameterDef[] = [
 		key: 'UTS',
 		label: 'Ultimate tensile strength',
 		unit: 'MPa',
-		extract: safe((s) => findUTS(s).UTS)
+		extract: safe((s, meta) => utsOf(s, meta))
 	},
 	{
 		key: 'E',
 		label: "Young's modulus",
 		unit: 'MPa',
-		extract: safe((s) => findUplLpl(s).E)
+		extract: safe((s, meta) => modulusOf(s, meta))
 	},
 	{
 		key: 'ProofStress',
 		label: '0.2% proof stress',
 		unit: 'MPa',
-		extract: safe((s) => findProofStress(s, findUplLpl(s).E).proofStress)
+		extract: safe((s, meta) => proofStressOf(s, meta))
 	}
 ];
 

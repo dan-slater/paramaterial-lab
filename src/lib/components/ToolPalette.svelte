@@ -1,19 +1,33 @@
 <script lang="ts">
-	import { blocksStore, TOOLS, type BlockType } from '$lib/stores/blocks.svelte';
+	import {
+		blocksStore,
+		TOOLS,
+		PROCESSING_TOOL_TYPES,
+		type BlockType
+	} from '$lib/stores/blocks.svelte';
+	import { processingApplies } from '$lib/pipeline';
 	import { tick } from 'svelte';
 	import { datasetStore } from '$lib/stores/dataset.svelte';
 	import { getSeriesLabels } from '$lib/analyzers/registry';
 
 	// The series plot is named for the loaded dataset's domain.
 	const labels = $derived(getSeriesLabels(datasetStore.current));
+	// Materials (and no dataset yet) get the processing tools — Trim, Foot
+	// correction, Screen — in pipeline order before the parameter tools. Other
+	// domains keep the palette they had.
+	const materials = $derived(!datasetStore.current || processingApplies(datasetStore.current));
 	const tools = $derived(
-		TOOLS.map((t) =>
+		TOOLS.filter((t) => materials || !PROCESSING_TOOL_TYPES.includes(t.type)).map((t) =>
 			t.type === 'stress-strain' ? { ...t, label: labels.name, description: labels.toolHint } : t
 		)
 	);
 
 	async function addAndScroll(type: BlockType) {
-		const b = blocksStore.add(type);
+		// A foot-correction block added from the palette applies its shift to the
+		// blocks below; template-seeded ones (no `apply`) stay diagnostic.
+		const config: Record<string, unknown> =
+			type === 'foot-correction' && materials ? { apply: true } : {};
+		const b = blocksStore.add(type, config);
 		await tick();
 		const el = document.getElementById(`block-${b.id}`);
 		if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });

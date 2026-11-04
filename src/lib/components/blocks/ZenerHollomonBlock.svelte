@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import uPlot from 'uplot';
-	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { useBlockDataset } from '$lib/stores/pipeline.svelte';
 	import { computeZH } from '$lib/processing';
 	import { getPlotTheme } from '$lib/plotTheme';
 
@@ -12,7 +12,10 @@
 
 	let { id, config }: Props = $props();
 
-	const tests = $derived(datasetStore.current?.tests ?? []);
+	// The dataset as processed by any Trim / Foot correction / Screen block above.
+	const data = useBlockDataset();
+
+	const tests = $derived(data.current?.tests ?? []);
 
 	let Q_kJmol = $state<number>((config.Q_kJmol as number) ?? 155);
 	let flowStrain = $state<number>((config.flowStrain as number) ?? 0.3);

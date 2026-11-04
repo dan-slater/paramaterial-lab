@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import uPlot from 'uplot';
-	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { useBlockDataset } from '$lib/stores/pipeline.svelte';
 	import { blocksStore } from '$lib/stores/blocks.svelte';
 	import { getParameterDefs } from '$lib/analyzers/registry';
 	import { getPlotTheme } from '$lib/plotTheme';
@@ -13,9 +13,12 @@
 
 	let { id, config }: Props = $props();
 
-	const tests = $derived(datasetStore.current?.tests ?? []);
-	const infoColumns = $derived(datasetStore.current?.info_columns ?? []);
-	const domain = $derived(datasetStore.current?.domain);
+	// The dataset as processed by any Trim / Foot correction / Screen block above.
+	const data = useBlockDataset();
+
+	const tests = $derived(data.current?.tests ?? []);
+	const infoColumns = $derived(data.current?.info_columns ?? []);
+	const domain = $derived(data.current?.domain);
 	const params = $derived(getParameterDefs(domain));
 
 	// Both axes can reference either a meta column ("meta:col") or a computed

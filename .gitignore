@@ -19,3 +19,7 @@ data/
 
 # README media renders
 scripts/readme-media/out/
+
+# processing-line screenshots and local data
+.shots/
+.data/

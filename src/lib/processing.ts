@@ -346,3 +346,139 @@ export function computeZH(
  *   200
  * );
  */
+
+/* ------------------------------------------------------------------------- *
+ * Processing steps for the report pipeline (Trim → Foot correction → Screen).
+ * Ports of paramaterial.processing.find_upl_and_lpl / correct_foot, kept
+ * separate from the analyzer functions above so those stay byte-identical.
+ * ------------------------------------------------------------------------- */
+
+export interface PreloadFit {
+	/** Upper proportional limit (strain, stress). */
+	UPL: [number, number];
+	/** Lower proportional limit (strain, stress). */
+	LPL: [number, number];
+	/** Two-point modulus between LPL and UPL, as the package computes it. */
+	E: number;
+	/** Strain at which the line through UPL with slope E crosses zero stress. */
+	strainShift: number;
+}
+
+/** Relative standard deviation of the OLS slope from running sums (paramaterial fit_line). */
+function slopeRelDev(n: number, sx: number, sy: number, sxx: number, sxy: number, syy: number): number {
+	const m = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+	const Sxy = (n * sxy - sx * sy) / (n - 1);
+	const Sx = Math.sqrt((n * sxx - sx * sx) / (n - 1));
+	const Sy = Math.sqrt((n * syy - sy * sy) / (n - 1));
+	const r = Sxy / (Sx * Sy);
+	const Sm = (Math.sqrt((1 - r * r) / (n - 2)) * Sy) / Sx;
+	return Sm / m;
+}
+
+/** Port of paramaterial `find_upl_and_lpl(preload=…, preload_key='Stress_MPa')`.
+ *  UPL: the end of the run of points from the preload whose straight-line fit has
+ *  the smallest relative slope deviation. LPL: the start of the run ending at the
+ *  UPL with the smallest relative deviation. E is the slope between LPL and UPL.
+ *  Comparisons against NaN fail exactly as numpy's do, so degenerate runs are skipped. */
+export function findUplLplPreload(c: Curve, preload = 0): PreloadFit | null {
+	const { strain: x, stress: y } = c;
+	const n = x.length;
+	const xu: number[] = [];
+	const yu: number[] = [];
+	for (let i = 0; i < n; i++) {
+		if (y[i] >= preload) {
+			xu.push(x[i]);
+			yu.push(y[i]);
+		}
+	}
+	let UPL: [number, number] = [0, 0];
+	let LPL: [number, number] = [0, 0];
+
+	// UPL: fit the first i points after the preload, i = 3 … len-1; UPL is point i.
+	let S_min = Infinity;
+	let sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0;
+	for (let k = 0; k < xu.length; k++) {
+		if (k >= 3) {
+			const s = slopeRelDev(k, sx, sy, sxx, sxy, syy);
+			if (s < S_min) {
+				S_min = s;
+				UPL = [xu[k], yu[k]];
+			}
+		}
+		const a = xu[k], b = yu[k];
+		sx += a; sy += b; sxx += a * a; sxy += a * b; syy += b * b;
+	}
+
+	// LPL: among points with strain <= UPL strain, fit the tail x[j:] for j = len … 4.
+	const xl: number[] = [];
+	const yl: number[] = [];
+	for (let i = 0; i < n; i++) {
+		if (x[i] <= UPL[0]) {
+			xl.push(x[i]);
+			yl.push(y[i]);
+		}
+	}
+	S_min = Infinity;
+	sx = 0; sy = 0; sxx = 0; sxy = 0; syy = 0;
+	// Walk j downward from the end; the tail x[j:] grows by one point each step.
+	for (let j = xl.length - 1; j > 3; j--) {
+		const a = xl[j], b = yl[j];
+		sx += a; sy += b; sxx += a * a; sxy += a * b; syy += b * b;
+		const len = xl.length - j;
+		const s = slopeRelDev(len, sx, sy, sxx, sxy, syy);
+		if (s < S_min) {
+			S_min = s;
+			LPL = [xl[j], yl[j]];
+		}
+	}
+
+	if (LPL[1] < preload) {
+		const first = y.findIndex((v) => v >= preload);
+		if (first < 0) return null;
+		LPL = [x[first], y[first]];
+	}
+	const E = (UPL[1] - LPL[1]) / (UPL[0] - LPL[0]);
+	if (!Number.isFinite(E) || E === 0) return null;
+	const strainShift = UPL[0] - UPL[1] / E;
+	return { UPL, LPL, E, strainShift };
+}
+
+/** Port of paramaterial `correct_foot`: shift strain so the elastic line passes the origin. */
+export function correctFoot(c: Curve, fit: PreloadFit): Curve {
+	const s = fit.strainShift;
+	return { strain: c.strain.map((v) => v - s), stress: c.stress.slice() };
+}
+
+export interface TrimOptions {
+	/** Keep points with strain below this (the notebook uses 0.01). null = no upper bound. */
+	maxStrain?: number | null;
+	/** Keep points with strain at or above this. null = no lower bound. */
+	minStrain?: number | null;
+	/** Drop points with stress below this floor. null = no floor. */
+	stressFloor?: number | null;
+	/** Cut the curve after the UTS or at the fracture point (largest strain). */
+	cut?: 'none' | 'uts' | 'fracture';
+}
+
+/** Keep the points of a curve that pass every trim condition, in their original order. */
+export function trimCurve(c: Curve, o: TrimOptions): Curve {
+	const { strain, stress } = c;
+	const n = strain.length;
+	let endIdx = n - 1;
+	if (o.cut === 'uts') endIdx = findUTS(c).idx;
+	else if (o.cut === 'fracture') {
+		let mx = -Infinity;
+		for (let i = 0; i < n; i++) if (strain[i] > mx) { mx = strain[i]; endIdx = i; }
+	}
+	const xs: number[] = [];
+	const ys: number[] = [];
+	for (let i = 0; i <= endIdx; i++) {
+		const e = strain[i], s = stress[i];
+		if (o.maxStrain != null && !(e < o.maxStrain)) continue;
+		if (o.minStrain != null && !(e >= o.minStrain)) continue;
+		if (o.stressFloor != null && !(s >= o.stressFloor)) continue;
+		xs.push(e);
+		ys.push(s);
+	}
+	return { strain: xs, stress: ys };
+}

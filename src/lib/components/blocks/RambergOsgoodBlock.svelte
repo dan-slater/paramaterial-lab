@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import uPlot from 'uplot';
-	import { datasetStore } from '$lib/stores/dataset.svelte';
+	import { useBlockDataset } from '$lib/stores/pipeline.svelte';
 	import { fitRambergOsgood, type RambergOsgoodFit } from '$lib/processing';
 	import { getPlotTheme } from '$lib/plotTheme';
 	import { getSeriesLabels } from '$lib/analyzers/registry';
@@ -13,7 +13,10 @@
 
 	let { id, config }: Props = $props();
 
-	const tests = $derived(datasetStore.current?.tests ?? []);
+	// The dataset as processed by any Trim / Foot correction / Screen block above.
+	const data = useBlockDataset();
+
+	const tests = $derived(data.current?.tests ?? []);
 	let previewTestId = $state((config.previewTestId as string) ?? '');
 
 	$effect(() => {
@@ -70,7 +73,7 @@
 		const yPad = (yMax - yMin) * 0.05 || 1;
 
 		const t = getPlotTheme();
-		const labels = getSeriesLabels(datasetStore.current);
+		const labels = getSeriesLabels(data.current);
 		const opts: uPlot.Options = {
 			width: container.clientWidth,
 			height: 340,
